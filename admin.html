@@ -862,43 +862,17 @@ document.querySelectorAll('.nav-item[data-tab]').forEach(btn => {
 ═══════════════════════════════════════════════════ */
 function renderOverview() {
   const p = adm.products, o = adm.orders;
-  const revenue = o.reduce((s, x) => s + (x.total || 0), 0);
-  const pending = o.filter(x => x.payStatus === 'pending_verification').length;
-  const lowStock = p.filter(x => x.stock > 0 && x.stock <= 5);
-  const oos = p.filter(x => x.stock <= 0).length;
-  const todayRev = o.filter(x => x.timestamp && new Date(x.timestamp).toDateString() === new Date().toDateString()).reduce((s, x) => s + (x.total || 0), 0);
 
-  document.getElementById('stat-cards').innerHTML = [
-    ['Products', p.length, `${p.filter(x => x.is_sale).length} on sale`, ''],
-    ['Orders', o.length, `${pending} pending`, ''],
-    ['Revenue', `₹${(revenue / 1000).toFixed(1)}k`, `Today: ${inr(todayRev)}`, ''],
-    ['Out of Stock', oos, `${lowStock.length} low stock`, oos ? 'var(--danger)' : 'var(--ok)']
-  ].map(([l, v, s, c]) => `<div class="stat"><div class="stat-label">${l}</div><div class="stat-value" ${c ? `style="color:${c}"` : ''}>${v}</div><div class="stat-sub">${s}</div></div>`).join('');
-
-  const recent = [...o].sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0)).slice(0, 6);
-  document.getElementById('ov-orders').innerHTML = recent.length
-    ? recent.map(ord => `<tr>
-        <td><span style="font-family:'DM Mono',monospace;font-size:.72rem;color:var(--gold)">${esc(ord.id)}</span></td>
-        <td>${esc(ord.customer)}</td>
-        <td>${inr(ord.total)}</td>
-        <td>${statusPill(ord.payStatus)}</td>
-      </tr>`).join('')
-    : `<tr><td colspan="4" class="tbl-empty">No orders yet</td></tr>`;
-
-  const alerts = [];
-  if (pending > 0) alerts.push(`<div style="padding:10px 0;border-bottom:1px solid var(--border);font-size:.82rem;color:var(--warn)">⏳ ${pending} order${pending > 1 ? 's' : ''} awaiting payment verification</div>`);
-  lowStock.forEach(p => alerts.push(`<div style="padding:10px 0;border-bottom:1px solid var(--border);font-size:.82rem;display:flex;justify-content:space-between"><span>${esc(p.name)}</span><span style="color:var(--warn)">${p.stock} left</span></div>`));
-  if (oos > 0) alerts.push(`<div style="padding:10px 0;font-size:.82rem;color:var(--danger)">${oos} product${oos > 1 ? 's' : ''} out of stock</div>`);
-  document.getElementById('ov-alerts').innerHTML = alerts.length ? alerts.join('') : `<p style="color:var(--ok);font-size:.83rem;padding:10px 0">✓ All good!</p>`;
-}
-
-function renderOverview() {
-  const p = adm.products, o = adm.orders;
-  const revenue = o.reduce((s, x) => s + (x.total || 0), 0);
+  // PRO FIX: Only count revenue for orders that are actually approved/verified!
+  const validOrders = o.filter(x => x.pay_status === 'verified' || x.pay_status === 'shipped' || x.pay_status === 'delivered');
+  
+  const revenue = validOrders.reduce((s, x) => s + (x.total || 0), 0);
   const pending = o.filter(x => x.pay_status === 'pending_verification').length;
   const lowStock = p.filter(x => x.stock > 0 && x.stock <= 5);
   const oos = p.filter(x => x.stock <= 0).length;
-  const todayRev = o.filter(x => x.timestamp && new Date(x.timestamp).toDateString() === new Date().toDateString()).reduce((s, x) => s + (x.total || 0), 0);
+  
+  // PRO FIX: Make sure "Today's Revenue" also only counts valid orders!
+  const todayRev = validOrders.filter(x => x.timestamp && new Date(x.timestamp).toDateString() === new Date().toDateString()).reduce((s, x) => s + (x.total || 0), 0);
 
   document.getElementById('stat-cards').innerHTML = [
     ['Products', p.length, `${p.filter(x => x.is_sale).length} on sale`, ''],
