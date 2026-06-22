@@ -74,24 +74,14 @@
     .card-title{font-family:'Cormorant Garamond',serif;font-size:1rem;font-weight:400;letter-spacing:2px;text-transform:uppercase;color:var(--gold);margin-bottom:18px;padding-bottom:10px;border-bottom:1px solid var(--border);}
 
     /* ── FORM ── */
-    .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
-    .field{display:flex;flex-direction:column;gap:4px;}.field.span2{grid-column:1/-1;}
-    .field label{font-size:.67rem;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);}
-    .field input,.field select,.field textarea{padding:10px 12px;background:rgba(255,255,255,.02);border:1px solid var(--border);border-radius:var(--radius);color:var(--white);font-size:.87rem;outline:none;transition:border-color .2s,background .2s;}
-    .field input:focus,.field select:focus,.field textarea:focus{border-color:var(--gold);background:rgba(201,168,76,.03);}
-    .field select option{background:#1c1c1c;}
-    .field .err-msg{font-size:.7rem;color:var(--danger);display:none;}
-    .field.invalid input,.field.invalid select,.field.invalid textarea{border-color:var(--danger);}
-    .field.invalid .err-msg{display:block;}
-    .sale-section{grid-column:1/-1;border:1px dashed var(--gold-bd);border-radius:var(--radius);padding:14px;background:var(--gold-bg);}
-    .toggle-row{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
-    .toggle-row label{font-size:.8rem;color:var(--light);cursor:pointer;}
-    .switch{position:relative;width:36px;height:20px;flex-shrink:0;}
-    .switch input{display:none;}
-    .slider{position:absolute;inset:0;cursor:pointer;background:#2a2a2a;border-radius:20px;transition:background .25s;}
-    .slider::before{content:'';position:absolute;width:14px;height:14px;background:#555;border-radius:50%;left:3px;top:3px;transition:transform .25s,background .25s;}
-    .switch input:checked+.slider{background:var(--gold-bg);border:1px solid var(--gold-bd);}
-    .switch input:checked+.slider::before{transform:translateX(16px);background:var(--gold);}
+    /* Password Toggle & Match Indicator */
+     .pwd-wrap { position: relative; display: flex; align-items: center; }
+     .pwd-wrap input { width: 100%; padding-right: 40px; }
+     .pwd-toggle { position: absolute; right: 12px; background: none; border: none; color: var(--muted); cursor: pointer; padding: 0; outline: none; transition: color 0.2s; display: flex; align-items: center; justify-content: center; }
+     .pwd-toggle svg { width: 18px; height: 18px; }
+     .pwd-toggle:hover { color: var(--gold); }
+     .pwd-match-indicator { display: none; font-size: 0.72rem; margin-top: 8px; font-weight: 500; }
+     .pwd-match-indicator.match { display: block; color: var(--ok); animation: fadeUp 0.3s var(--ease); }
 
     /* ═══════════════════════════════════════════════
        FIX #2 — IMAGE UPLOAD SYSTEM (UPGRADED)
@@ -654,13 +644,40 @@
         </div>
 
         <!-- PIN change -->
-        <div class="card">
-          <div class="card-title">Change Admin PIN</div>
-          <div class="field" id="fld-new-pin"><label>New PIN (min 6 chars)</label><input type="password" id="new-pin" maxlength="32"><span class="err-msg">Min 6 characters</span></div>
-          <div class="field" id="fld-confirm-pin" style="margin-top:10px"><label>Confirm PIN</label><input type="password" id="confirm-pin" maxlength="32"><span class="err-msg">PINs don't match</span></div>
-          <div class="btn-row" style="margin-top:12px"><button class="btn btn-primary" id="change-pin-btn">Update PIN</button></div>
-          <p class="settings-note">⚠ Credentials stored client-side. For production, use server-side auth with hashed passwords + JWT sessions.</p>
-        </div>
+<div class="card">
+  <div class="card-title">Change Admin PIN</div>
+  
+  <div class="field" id="fld-new-pin">
+    <label>New PIN (min 6 chars)</label>
+    <div class="pwd-wrap">
+      <input type="password" id="new-pin" maxlength="32">
+      <button type="button" class="pwd-toggle" tabindex="-1" onclick="togglePwd('new-pin', this)" title="Show password">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+      </button>
+    </div>
+    <span class="err-msg">Min 6 characters</span>
+  </div>
+  
+  <div class="field" id="fld-confirm-pin" style="margin-top:12px">
+    <label>Confirm PIN</label>
+    <div class="pwd-wrap">
+      <input type="password" id="confirm-pin" maxlength="32">
+      <button type="button" class="pwd-toggle" tabindex="-1" onclick="togglePwd('confirm-pin', this)" title="Show password">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+      </button>
+    </div>
+    <span class="err-msg">PINs don't match</span>
+    
+    <!-- The Live Match Indicator -->
+    <div id="pin-match-ok" class="pwd-match-indicator">✓ Secure PIN matched and ready</div>
+  </div>
+  
+  <div class="btn-row" style="margin-top:14px">
+    <button class="btn btn-primary" id="change-pin-btn" disabled style="opacity:0.4; cursor:not-allowed;">Update PIN</button>
+  </div>
+  
+  <p class="settings-note">⚠ Credentials stored client-side. For production, use server-side auth with hashed passwords + JWT sessions.</p>
+</div>
 
         <!-- Data management -->
         <div class="card">
@@ -1703,17 +1720,56 @@ document.getElementById('save-config-btn').addEventListener('click', () => {
   saveCloudSettings(newSettings);
 });
 
-document.getElementById('change-pin-btn').addEventListener('click', () => {
-  const np = document.getElementById('new-pin').value;
-  const cp = document.getElementById('confirm-pin').value;
-  const f1 = document.getElementById('fld-new-pin');
-  const f2 = document.getElementById('fld-confirm-pin');
-  let ok = true;
-  f1.classList.toggle('invalid', np.length < 6); if (np.length < 6) ok = false;
-  f2.classList.toggle('invalid', np !== cp);     if (np !== cp) ok = false;
-  if (!ok) return;
+/* ── UPGRADED PIN CHANGE LOGIC (SVG SWAP) ── */
+const eyeOpenSVG = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>`;
+const eyeClosedSVG = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>`;
+
+// 1. Toggle visibility and swap SVG icons
+window.togglePwd = function(id, btn) {
+  const input = document.getElementById(id);
+  if (input.type === 'password') {
+    input.type = 'text';
+    btn.innerHTML = eyeClosedSVG; // Shows slashed eye
+  } else {
+    input.type = 'password';
+    btn.innerHTML = eyeOpenSVG; // Shows regular eye
+  }
+};
+
+// 2. Live validation check
+const newPinInput = document.getElementById('new-pin');
+const confirmPinInput = document.getElementById('confirm-pin');
+const matchIndicator = document.getElementById('pin-match-ok');
+const updateBtn = document.getElementById('change-pin-btn');
+
+function checkPinMatch() {
+  const np = newPinInput.value;
+  const cp = confirmPinInput.value;
+  
+  if (np.length >= 6 && np === cp) {
+    matchIndicator.classList.add('match');
+    updateBtn.disabled = false;
+    updateBtn.style.opacity = '1';
+    updateBtn.style.cursor = 'pointer';
+    document.getElementById('fld-new-pin').classList.remove('invalid');
+    document.getElementById('fld-confirm-pin').classList.remove('invalid');
+  } else {
+    matchIndicator.classList.remove('match');
+    updateBtn.disabled = true;
+    updateBtn.style.opacity = '0.4';
+    updateBtn.style.cursor = 'not-allowed';
+  }
+}
+
+newPinInput.addEventListener('input', checkPinMatch);
+confirmPinInput.addEventListener('input', checkPinMatch);
+
+// 3. Save the PIN
+updateBtn.addEventListener('click', () => {
+  const np = newPinInput.value;
   localStorage.setItem(KEYS.pass, np);
-  addLog('Admin PIN changed'); toast('PIN updated — please re-login', 'ok');
+  addLog('Admin PIN changed'); 
+  toast('PIN updated — please re-login', 'ok');
   setTimeout(() => location.reload(), 1500);
 });
 
