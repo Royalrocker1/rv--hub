@@ -74,6 +74,29 @@
     .card-title{font-family:'Cormorant Garamond',serif;font-size:1rem;font-weight:400;letter-spacing:2px;text-transform:uppercase;color:var(--gold);margin-bottom:18px;padding-bottom:10px;border-bottom:1px solid var(--border);}
 
     /* ── FORM ── */
+    /* Base Form Fields (Dark Boxes & Gold Text) */
+    .field { margin-bottom: 16px; }
+    .field label { display: block; font-size: 0.68rem; letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; }
+    
+    .field input, .field textarea, .field select { 
+      width: 100%; 
+      padding: 10px 14px; 
+      background: #0d0d0d; /* Premium Black Box */
+      border: 1px solid var(--border); 
+      border-radius: var(--radius); 
+      color: var(--gold); /* Premium Gold Text */
+      font-size: 0.85rem; 
+      outline: none; 
+      transition: all 0.2s var(--ease); 
+    }
+    
+    /* Gold Glow when clicked/typing */
+    .field input:focus, .field textarea:focus, .field select:focus { 
+      border-color: var(--gold); 
+      background: #151515; 
+      box-shadow: 0 0 0 2px rgba(201, 168, 76, 0.15); 
+    }
+
     /* Password Toggle & Match Indicator */
      .pwd-wrap { position: relative; display: flex; align-items: center; }
      .pwd-wrap input { width: 100%; padding-right: 40px; }
