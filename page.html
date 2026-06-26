@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>RV HUB</title>
+    <style>
+        body { background: #050505; color: #f2f0ea; font-family: 'DM Sans', sans-serif; padding: 5% 10%; line-height: 1.8; }
+        h1 { font-family: 'Cormorant Garamond', serif; color: #C9A84C; margin-bottom: 2rem; }
+        h2 { color: #fff; margin: 2rem 0 1rem; }
+        p { color: #666; margin-bottom: 1rem; }
+        .back-link { display: inline-block; color: #C9A84C; margin-bottom: 2rem; text-decoration: none; }
+    </style>
+</head>
+<body>
+    <a href="index.html" class="back-link">← Back to Store</a>
+    <div id="content">Loading...</div>
+
+    <script>
+        const pages = {
+            'terms': { title: 'Terms & Conditions', body: '<p>Welcome to RV HUB. By using this website, you agree to these terms...</p>' },
+            'returns': { title: 'Refund & Return Policy', body: '<p>If you are not satisfied, contact us within 7 days...</p>' },
+            'privacy': { title: 'Privacy Policy', body: '<p>Your privacy is important to us. We do not share your data...</p>' },
+            'shipping': { title: 'Shipping Information', body: '<p>Orders are processed within 24 hours and delivered within 3-5 days...</p>' },
+            'contact': { title: 'Contact Support', body: '<p>Email us at: support@rvhub.co.in</p>' },
+            'faq': { title: 'FAQ', body: '<p>Q: Do you offer COD? A: Yes, we offer partial COD.</p>' }
+        };
+        const params = new URLSearchParams(window.location.search);
+        const page = params.get('page');
+        if(pages[page]) {
+            document.title = pages[page].title + ' | RV HUB';
+            document.getElementById('content').innerHTML = `<h1>${pages[page].title}</h1>${pages[page].body}`;
+        }
+    </script>
+</body>
+</html>

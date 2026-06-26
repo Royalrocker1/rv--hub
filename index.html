@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -105,8 +104,8 @@ body.cursor-click #cursor-dot{transform:translate(-50%,-50%) scale(2);}
 .add-btn:disabled{border-color:#2a2a2a;color:#3a3a3a;cursor:not-allowed;}
 .empty-state{grid-column:1/-1;text-align:center;padding:60px 0;color:var(--muted);font-family:'Cormorant Garamond',serif;font-size:1.3rem;letter-spacing:1px;font-style:italic;animation:emptyFloat 3.5s ease-in-out infinite;}
 @keyframes emptyFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
-.sr{opacity:0;transform:translateY(28px);transition:opacity .7s var(--ease),transform .7s var(--ease);}
-.sr.sr-in{opacity:1!important;transform:none!important;}
+.sr { opacity: 0; transform: translateY(50px) scale(0.94); transition: opacity 0.8s var(--ease), transform 0.8s var(--ease); }
+.sr.sr-in { opacity: 1 !important; transform: translateY(0) scale(1) !important; }
 #detail{display:none;padding:2.5rem 5% 5rem;}
 .back-btn{display:inline-flex;align-items:center;gap:8px;padding:8px 18px;margin-bottom:28px;border:1px solid var(--border);border-radius:var(--radius);background:transparent;color:var(--muted);font-size:.78rem;letter-spacing:1px;text-transform:uppercase;transition:color .2s,border-color .2s,transform .25s var(--ease);}
 .back-btn:hover{color:var(--white);border-color:var(--gold);transform:translateX(-5px);}
@@ -282,6 +281,50 @@ body.cursor-click #cursor-dot{transform:translate(-50%,-50%) scale(2);}
 @media(max-width:768px){.detail-layout{grid-template-columns:1fr;gap:2rem;}}
 @media(max-width:600px){.navbar{padding:0 4%;gap:12px;}.main{padding:1.5rem 4% 5rem;}.grid{gap:1.2rem;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));}.card-img-wrap{height:180px;}.filter-bar{padding:0 4%;}.modal-box{padding:24px 18px;}.pay-modes{grid-template-columns:1fr;}.field-row{grid-template-columns:1fr;}}
 @media(max-width:380px){.grid{grid-template-columns:1fr 1fr;gap:.8rem;}.card-img-wrap{height:150px;}.card-body{padding:12px;}}
+
+/* ── PREMIUM FOOTER ── */
+.footer { background: var(--ink); border-top: 1px solid var(--border); padding: 5rem 5% 2rem; margin-top: 4rem; font-family: 'DM Sans', sans-serif; }
+.footer-grid { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 3rem; margin-bottom: 4rem; }
+.footer-col h4 { font-family: 'Cormorant Garamond', serif; font-size: 1.3rem; color: var(--white); letter-spacing: 3px; text-transform: uppercase; margin-bottom: 1.5rem; font-weight: 400; }
+.footer-col p { color: var(--muted); font-size: 0.85rem; line-height: 1.8; max-width: 320px; }
+.footer-link { display: block; color: var(--muted); text-decoration: none; font-size: 0.85rem; margin-bottom: 1rem; transition: color 0.25s var(--ease), transform 0.25s var(--ease); cursor: none; width: fit-content; }
+.footer-link:hover { color: var(--gold); transform: translateX(6px); }
+.footer-bottom { border-top: 1px solid rgba(255,255,255,0.03); padding-top: 2rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; }
+.footer-copy { color: var(--muted); font-size: 0.75rem; letter-spacing: 1px; text-transform: uppercase; }
+
+/* ── HERO BANNER ── */
+.hero-section { position: relative; height: 65vh; min-height: 450px; display: flex; align-items: center; justify-content: center; text-align: center; overflow: hidden; margin-bottom: 2rem; border-bottom: 1px solid var(--border); }
+.hero-bg { position: absolute; inset: 0; background: url('https://images.unsplash.com/photo-1547996160-81dfa63595aa?q=80&w=2000') center/cover no-repeat; opacity: 0.45; transform: scale(1.05); transition: transform 12s ease-out; }
+.hero-section:hover .hero-bg { transform: scale(1.1); }
+.hero-overlay { position: absolute; inset: 0; background: linear-gradient(to bottom, rgba(5,5,5,0.1) 0%, rgba(5,5,5,1) 100%); }
+.hero-content { position: relative; z-index: 2; padding: 0 5%; max-width: 800px; animation: heroFadeUp 1.2s var(--ease) forwards; }
+@keyframes heroFadeUp { from { opacity: 0; transform: translateY(40px); } to { opacity: 1; transform: translateY(0); } }
+.hero-title { font-family: 'Cormorant Garamond', serif; font-size: clamp(2.5rem, 6vw, 4.5rem); font-weight: 300; letter-spacing: 4px; text-transform: uppercase; color: var(--gold); margin-bottom: 1.2rem; text-shadow: 0 4px 30px rgba(0,0,0,0.8); }
+.hero-sub { font-size: 0.95rem; color: var(--light); margin-bottom: 2.5rem; line-height: 1.8; letter-spacing: 0.5px; }
+.hero-btn { display: inline-block; padding: 14px 36px; background: transparent; border: 1px solid var(--gold); color: var(--gold); font-size: 0.78rem; letter-spacing: 2px; text-transform: uppercase; transition: all 0.4s var(--spring); cursor: none; position: relative; overflow: hidden; }
+.hero-btn:hover { background: var(--gold); color: var(--ink); transform: translateY(-3px); box-shadow: 0 12px 24px rgba(201, 168, 76, 0.25); }
+
+/* Mobile Adjustments */
+@media(max-width: 768px) {
+  .footer-grid { grid-template-columns: 1fr; gap: 2.5rem; }
+  .footer-col h4 { margin-bottom: 1rem; }
+}
+/* ── VIP BOX & WHATSAPP FLOATER FIXES ── */
+.vip-box { background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border); padding: 1.5rem; border-radius: 6px; }
+.vip-box p { color: var(--muted); font-size: 0.8rem; margin-bottom: 1.2rem; line-height: 1.6; }
+.vip-btn { display: inline-block; padding: 10px 20px; background: transparent; border: 1px solid var(--gold); color: var(--gold); font-size: 0.72rem; letter-spacing: 2px; text-transform: uppercase; text-decoration: none; border-radius: var(--radius); transition: all 0.3s var(--spring); cursor: none; }
+.vip-btn:hover { background: var(--gold); color: var(--ink); transform: translateY(-3px); box-shadow: 0 8px 20px rgba(201, 168, 76, 0.2); }
+
+.wa-float { position: fixed; bottom: 24px; left: 24px; width: 54px; height: 54px; background: #25D366; border-radius: 50%; display: flex; align-items: center; justify-content: center; text-decoration: none; z-index: 1000; box-shadow: 0 4px 14px rgba(37, 211, 102, 0.25); transition: transform 0.3s var(--spring), box-shadow 0.3s; cursor: none; }
+.wa-float:hover { transform: translateY(-5px) scale(1.05); box-shadow: 0 8px 24px rgba(37, 211, 102, 0.4); }
+.wa-float svg { width: 30px; height: 30px; fill: #fff; }
+.wa-float::after { content: ''; position: absolute; inset: 0; border-radius: 50%; border: 2px solid #25D366; animation: waPulse 2s infinite; pointer-events: none; }
+@keyframes waPulse { 0% { transform: scale(1); opacity: 0.8; } 100% { transform: scale(1.6); opacity: 0; } }
+
+@media(max-width: 600px) { 
+  .wa-float { bottom: 20px; left: 20px; width: 48px; height: 48px; } 
+  .wa-float svg { width: 26px; height: 26px; } 
+}
 </style>
 </head>
 <body>
@@ -317,15 +360,28 @@ body.cursor-click #cursor-dot{transform:translate(-50%,-50%) scale(2);}
   </select>
 </div>
 <main>
-  <div id="shop" class="main">
-  <div style="display: flex; gap: 12px; margin-bottom: 24px; overflow-x: auto;">
-    <button class="g-btn" data-gender="all" style="padding: 5px 14px; background: transparent; border: none; border-bottom: 2px solid var(--gold); color: var(--gold); font-size: .78rem; letter-spacing: 1.2px; text-transform: uppercase;">All Genders</button>
-    <button class="g-btn" data-gender="him" style="padding: 5px 14px; background: transparent; border: none; border-bottom: 2px solid transparent; color: var(--muted); font-size: .78rem; letter-spacing: 1.2px; text-transform: uppercase;">For Him</button>
-    <button class="g-btn" data-gender="her" style="padding: 5px 14px; background: transparent; border: none; border-bottom: 2px solid transparent; color: var(--muted); font-size: .78rem; letter-spacing: 1.2px; text-transform: uppercase;">For Her</button>
-    <button class="g-btn" data-gender="unisex" style="padding: 5px 14px; background: transparent; border: none; border-bottom: 2px solid transparent; color: var(--muted); font-size: .78rem; letter-spacing: 1.2px; text-transform: uppercase;">Unisex</button>
+  <!-- HERO BANNER (This is the new part) -->
+  <div class="hero-section" id="hero-banner">
+    <div class="hero-bg"></div>
+    <div class="hero-overlay"></div>
+    <div class="hero-content">
+      <h1 class="hero-title">Uncompromising Style</h1>
+      <button class="hero-btn" onclick="document.getElementById('shop').scrollIntoView({behavior:'smooth', block:'start'})">Explore Collection</button>
+    </div>
   </div>
-  <div class="grid" id="grid"></div>
-</div>
+
+  <!-- YOUR EXISTING SHOP CONTENT (Nothing here is deleted) -->
+  <div id="shop" class="main">
+    <div style="display: flex; gap: 12px; margin-bottom: 24px; overflow-x: auto;">
+      <button class="g-btn" data-gender="all" style="padding: 5px 14px; background: transparent; border: none; border-bottom: 2px solid var(--gold); color: var(--gold); font-size: .78rem; letter-spacing: 1.2px; text-transform: uppercase;">All Genders</button>
+      <button class="g-btn" data-gender="him" style="padding: 5px 14px; background: transparent; border: none; border-bottom: 2px solid transparent; color: var(--muted); font-size: .78rem; letter-spacing: 1.2px; text-transform: uppercase;">For Him</button>
+      <button class="g-btn" data-gender="her" style="padding: 5px 14px; background: transparent; border: none; border-bottom: 2px solid transparent; color: var(--muted); font-size: .78rem; letter-spacing: 1.2px; text-transform: uppercase;">For Her</button>
+      <button class="g-btn" data-gender="unisex" style="padding: 5px 14px; background: transparent; border: none; border-bottom: 2px solid transparent; color: var(--muted); font-size: .78rem; letter-spacing: 1.2px; text-transform: uppercase;">Unisex</button>
+    </div>
+    <div class="grid" id="grid"></div>
+  </div>
+
+  <!-- YOUR EXISTING PRODUCT DETAIL VIEW -->
   <div id="detail">
     <button class="back-btn" id="back-btn">← Back</button>
     <div class="detail-layout">
@@ -348,6 +404,41 @@ body.cursor-click #cursor-dot{transform:translate(-50%,-50%) scale(2);}
     </div>
   </div>
 </main>
+<!-- FOOTER -->
+<footer class="footer">
+  <div class="footer-grid">
+    <div class="footer-col">
+      <h4>RV HUB</h4>
+      <p>Premium sneakers, watches, sunglasses, and electronics. Uncompromising style and quality delivered straight to your door.</p>
+    </div>
+    <div class="footer-col">
+      <h4>Quick Links</h4>
+      <a href="#" class="footer-link">Terms & Conditions</a>
+      <a href="#" class="footer-link">Refund & Return Policy</a>
+      <a href="#" class="footer-link">Shipping Information</a>
+      <a href="#" class="footer-link">Contact Support</a>
+    </div>
+    <div class="footer-col">
+      <h4>VIP Community</h4>
+      <div class="vip-box">
+        <p>Join our exclusive WhatsApp group for regular buyers. Get advance notifications on fresh drops and secure limited stock before anyone else.</p>
+        <a href="https://chat.whatsapp.com/DDSMkLCdzvtDs5FbjNMrQw" target="_blank" class="vip-btn">Request Access</a>
+      </div>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <div class="footer-copy">© 2026 RV HUB. All rights reserved.</div>
+    <div style="display:flex; align-items:center; gap:8px;">
+      <span style="font-size:1.1rem">🔒</span>
+      <span style="color:var(--muted); font-size:0.75rem;">100% Secure Checkout</span>
+    </div>
+  </div>
+</footer>
+
+<!-- FLOATING WHATSAPP -->
+<a href="#" id="wa-float-btn" class="wa-float" target="_blank" aria-label="Chat on WhatsApp">
+  <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 0 0-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413Z"/></svg>
+</a>
 <div id="overlay"></div>
 <aside id="cart">
   <div class="cart-head"><h3>Your Cart</h3><button class="close-btn" id="cart-close">×</button></div>
@@ -542,7 +633,7 @@ function renderGrid(){
       const pct=p.is_sale?Math.round(((p.price-p.sale_price)/p.price)*100):0;
       const delay=Math.min(i*55,500);
       const imgs=getProductImages(p);
-      return`<article class="card sr" style="transition-delay:${delay}ms;transition:opacity .7s var(--ease) ${delay}ms,transform .7s var(--ease) ${delay}ms,box-shadow .5s,border-color .3s" data-pid="${p.id}">
+      return`<article class="card sr" style="transition-delay:${delay}ms;" data-pid="${p.id}">
         <div class="card-img-wrap">
           ${p.is_sale&&!oos?`<div class="badge">−${pct}%</div>`:''}
           <img class="card-img" src="${esc(imgs[0])}" onerror="this.src='https://images.unsplash.com/photo-1542291026-7eec264c27ff?q=80&w=400'" alt="${esc(p.name)}" loading="lazy">
@@ -572,7 +663,9 @@ function showDetail(id,push=true){
   document.getElementById('det-price').innerHTML=p.is_sale?`<span class="detail-price" style="color:var(--gold)">${inr(p.sale_price)}</span><span class="detail-was">${inr(p.price)}</span>`:`<span class="detail-price">${inr(p.price)}</span>`;
   const btn=document.getElementById('det-add');btn.disabled=p.stock<=0;btn.textContent=p.stock<=0?'Sold Out':'Add to Cart';btn.dataset.add=id;
   renderGallery();
-  document.getElementById('shop').style.display='none';document.getElementById('filter-bar').style.display='none';
+  document.getElementById('shop').style.display='none';
+document.getElementById('filter-bar').style.display='none';
+if (document.getElementById('hero-banner')) document.getElementById('hero-banner').style.display='none';
   const detail=document.getElementById('detail');detail.style.display='block';
   detail.classList.remove('page-enter');raf(()=>raf(()=>detail.classList.add('page-enter')));
   initRippleButtons();setAmbient(p.category);window.scrollTo({top:0,behavior:'smooth'});
@@ -601,7 +694,13 @@ document.addEventListener('keydown',e=>{
 });
 
 function goHome(push=true){
-  document.getElementById('shop').style.display='block';document.getElementById('filter-bar').style.display='flex';document.getElementById('detail').style.display='none';
+  document.getElementById('shop').style.display='block';
+document.getElementById('filter-bar').style.display='flex';
+document.getElementById('detail').style.display='none';
+// Only bring the banner back if the user isn't currently actively searching
+if (document.getElementById('hero-banner') && S.query.trim() === '') {
+  document.getElementById('hero-banner').style.display='flex';
+}
   const shop=document.getElementById('shop');shop.classList.remove('page-enter');raf(()=>raf(()=>shop.classList.add('page-enter')));
   setAmbient(S.category);renderGrid();if(push)history.pushState({view:'home'},'','');
 }
@@ -889,8 +988,29 @@ document.getElementById('cart-items').addEventListener('click',e=>{
   if(q)changeQty(q.dataset.qty,+q.dataset.delta);
   if(r){const id=r.dataset.remove;const ci=r.closest('.cart-item');if(ci){ci.classList.add('removing');ci.addEventListener('animationend',()=>{S.cart=S.cart.filter(x=>String(x.id)!==String(id));renderCart();},{once:true});}else{S.cart=S.cart.filter(x=>String(x.id)!==String(id));renderCart();}}
 });
-document.querySelectorAll('.cat').forEach(btn=>{btn.addEventListener('click',()=>{document.querySelectorAll('.cat').forEach(b=>b.classList.remove('active'));btn.classList.add('active');S.category=btn.dataset.cat;setAmbient(S.category);renderGrid();});});
-document.getElementById('search').addEventListener('input',e=>{S.query=e.target.value;renderGrid();});
+document.querySelectorAll('.cat').forEach(btn=>{btn.addEventListener('click',()=>{document.querySelectorAll('.cat').forEach(b=>b.classList.remove('active'));btn.classList.add('active');S.category=btn.dataset.cat;setAmbient(S.category);renderGrid();});});// --- APP-LIKE SEARCH BEHAVIOR ---
+const searchInput = document.getElementById('search');
+const heroBanner = document.getElementById('hero-banner');
+
+searchInput.addEventListener('focus', () => {
+  // Hide banner instantly when they tap the search box
+  if (heroBanner) heroBanner.style.display = 'none';
+  window.scrollTo({top: 0, behavior: 'smooth'});
+});
+
+searchInput.addEventListener('blur', () => {
+  // Bring banner back if they click away and the search box is empty
+  if (S.query.trim() === '' && heroBanner) {
+    heroBanner.style.display = 'flex';
+  }
+});
+
+searchInput.addEventListener('input', e => {
+  // Filter products in real-time as they type
+  S.query = e.target.value;
+  renderGrid();
+});
+// --------------------------------
 document.getElementById('sort').addEventListener('change',e=>{S.sort=e.target.value;renderGrid();});
 document.querySelectorAll('.g-btn').forEach(btn => {
   btn.addEventListener('click', () => {
@@ -919,7 +1039,7 @@ function createRipple(e){
   const el=document.createElement('span');el.className='ripple-el';el.style.cssText=`width:${size}px;height:${size}px;left:${e.clientX-rect.left-size/2}px;top:${e.clientY-rect.top-size/2}px;`;
   btn.appendChild(el);el.addEventListener('animationend',()=>el.remove(),{once:true});
 }
-function initRippleButtons(){document.querySelectorAll('.add-btn,.btn-next,.checkout-btn,.detail-add,.cart-btn,.btn-back-modal,.location-btn').forEach(btn=>{if(!btn.dataset.ripple){btn.addEventListener('click',createRipple);btn.dataset.ripple='1';}});}
+function initRippleButtons(){document.querySelectorAll('.hero-btn,.add-btn,.btn-next,.checkout-btn,.detail-add,.cart-btn,.btn-back-modal,.location-btn').forEach(btn=>{if(!btn.dataset.ripple){btn.addEventListener('click',createRipple);btn.dataset.ripple='1';}});}
 
 function initProgressiveImages(){document.querySelectorAll('.card-img:not(.img-ready)').forEach(img=>{if(img.complete&&img.naturalWidth>0)img.classList.add('img-ready');else{img.addEventListener('load',()=>img.classList.add('img-ready'),{once:true});img.addEventListener('error',()=>img.classList.add('img-ready'),{once:true});}});}
 
@@ -941,9 +1061,16 @@ function initCardTilt(){
   const ambient=document.getElementById('ambient');let ticking=false;
   window.addEventListener('scroll',()=>{if(!ticking){raf(()=>{ambient.style.transform=`translateY(${window.scrollY*.1}px)`;ticking=false;});ticking=true;}},{passive:true});
 })();
-
 async function initStore(){
   await loadCfg();
+  
+  // Connect the floating WhatsApp button to your Admin config number
+  const waBtn = document.getElementById('wa-float-btn');
+  if (waBtn && S.cfg.waNumber) {
+    const cleanNum = S.cfg.waNumber.replace(/\D/g, '');
+    waBtn.href = `https://wa.me/${cleanNum}?text=Hi%20RV%20HUB!%20I%20have%20a%20question.`;
+  }
+
   const{data,error}=await sb.from('products').select('*').order('created_at',{ascending:false});
   if(error){toast('Failed to load products','err');S.products=[];}
   else S.products=data||[];
