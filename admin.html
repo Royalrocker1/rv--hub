@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>RV HUB | Control Room v4</title>
@@ -343,6 +344,7 @@
   </div>
 </div>
 
+
 <!-- TOPBAR -->
 <header id="topbar" style="display:none">
   <div class="topbar-logo">RV HUB · CONTROL ROOM</div>
@@ -355,6 +357,12 @@
 <!-- APP -->
 <div id="app" style="display:none">
   <nav id="sidenav">
+<div class="nav-section">Analytics</div>
+    <button class="nav-item" data-tab="analytics">
+      <!-- A cool line-chart icon -->
+      <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M18 9l-5 5-4-4-4 4"/></svg>
+      <span>Sales Chart</span>
+    </button>
     <div class="nav-section">Dashboard</div>
     <button class="nav-item active" data-tab="overview">
       <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
@@ -388,8 +396,7 @@
   </nav>
 
   <div id="workspace">
-
-    <!-- OVERVIEW -->
+<!-- OVERVIEW -->
     <div class="section active" id="tab-overview">
       <p class="page-title">Dashboard</p>
       <div class="stats" id="stat-cards"></div>
@@ -399,6 +406,31 @@
           <div class="table-wrap"><table><thead><tr><th>ID</th><th>Customer</th><th>Total</th><th>Status</th></tr></thead><tbody id="ov-orders"></tbody></table></div>
         </div>
         <div class="card"><div class="card-title">Alerts</div><div id="ov-alerts"></div></div>
+      </div>
+    </div>
+
+    <!-- ANALYTICS TAB -->
+    <div class="section" id="tab-analytics">
+      <p class="page-title">Sales Analytics</p>
+      
+      <!-- CUSTOM SALES CHART -->
+      <div class="card" style="margin-bottom: 24px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:18px; flex-wrap:wrap; gap:10px;">
+          <div class="card-title" style="margin-bottom:0; border:none; padding-bottom:0;">Revenue Trend</div>
+          
+          <!-- Date Selectors -->
+          <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+            <input type="date" id="chart-start-date" style="padding:6px 10px; background:#0d0d0d; border:1px solid var(--border); color:var(--gold); border-radius:var(--radius); font-size:0.75rem; outline:none;">
+            <span style="color:var(--muted); font-size:0.75rem;">to</span>
+            <input type="date" id="chart-end-date" style="padding:6px 10px; background:#0d0d0d; border:1px solid var(--border); color:var(--gold); border-radius:var(--radius); font-size:0.75rem; outline:none;">
+            <button class="btn btn-primary btn-sm" id="update-chart-btn">Update Chart</button>
+          </div>
+        </div>
+        
+        <!-- Chart Canvas -->
+        <div style="position: relative; height: 300px; width: 100%;">
+          <canvas id="salesChart"></canvas>
+        </div>
       </div>
     </div>
 
@@ -769,7 +801,10 @@ const adm = {
   trackPreviewMsg: '', trackPreviewOrderId: '',
   uploadedImages: [],   // base64 compressed images
   activeImgTab: 'file'
+  
 };
+let salesChartInstance = null;
+let chartDatesInitialized = false;
 
 /* ═══════════════════════════════════════════════════
    UTILS
@@ -891,7 +926,7 @@ document.querySelectorAll('.nav-item[data-tab]').forEach(btn => {
     if (t === 'orders')    { loadAdminOrders(); } 
     
     if (t === 'products')  { loadAdminProducts(); }
-    
+    if (t === 'analytics') { renderCustomSalesChart(); }
     if (t === 'tracking')  renderTrackingTab();
     if (t === 'activity')  renderActivityLog();
     if (t === 'settings') { loadCloudSettings(); }
@@ -937,6 +972,119 @@ function renderOverview() {
   if (oos > 0) alerts.push(`<div style="padding:10px 0;font-size:.82rem;color:var(--danger)">${oos} product${oos > 1 ? 's' : ''} out of stock</div>`);
   document.getElementById('ov-alerts').innerHTML = alerts.length ? alerts.join('') : `<p style="color:var(--ok);font-size:.83rem;padding:10px 0">✓ All good!</p>`;
 }
+function renderCustomSalesChart() {
+  const ctx = document.getElementById('salesChart');
+  if (!ctx) return;
+
+  const startInput = document.getElementById('chart-start-date');
+  const endInput = document.getElementById('chart-end-date');
+
+  // Initialize with the last 14 days if empty
+  if (!chartDatesInitialized) {
+    const end = new Date();
+    const start = new Date();
+    start.setDate(end.getDate() - 14); 
+    
+    startInput.value = start.toISOString().split('T')[0];
+    endInput.value = end.toISOString().split('T')[0];
+    chartDatesInitialized = true;
+  }
+
+  if (!startInput.value || !endInput.value) return;
+
+  // Set time boundaries to cover the full days
+  const startStr = new Date(startInput.value);
+  startStr.setHours(0, 0, 0, 0);
+  
+  const endStr = new Date(endInput.value);
+  endStr.setHours(23, 59, 59, 999);
+
+  // Filter orders by valid payment status AND the selected date range
+  const validOrders = adm.orders.filter(x => 
+    (x.pay_status === 'verified' || x.pay_status === 'shipped' || x.pay_status === 'delivered') &&
+    x.timestamp >= startStr.getTime() && 
+    x.timestamp <= endStr.getTime()
+  );
+
+  // Generate labels for every single day between the start and end date
+  const labels = [];
+  const dataMap = {};
+  
+  let curr = new Date(startStr);
+  while(curr <= endStr) {
+    const labelStr = curr.toLocaleDateString('en-IN', { month: 'short', day: 'numeric' });
+    labels.push(labelStr);
+    dataMap[labelStr] = 0; // Initialize revenue to 0 for this day
+    curr.setDate(curr.getDate() + 1); // Move to next day
+  }
+
+  // Map the valid orders to their specific days
+  validOrders.forEach(ord => {
+    if (ord.timestamp) {
+      const ordDate = new Date(ord.timestamp).toLocaleDateString('en-IN', { month: 'short', day: 'numeric' });
+      if (dataMap[ordDate] !== undefined) {
+        dataMap[ordDate] += (ord.total || 0);
+      }
+    }
+  });
+
+  const chartData = labels.map(label => dataMap[label]);
+
+  // Destroy the old chart before drawing a new one so they don't overlap
+  if (salesChartInstance) {
+    salesChartInstance.destroy();
+  }
+
+  // Draw the new chart
+  salesChartInstance = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: labels,
+      datasets: [{
+        label: 'Revenue (₹)',
+        data: chartData,
+        borderColor: '#C9A84C', // Matches your gold theme
+        backgroundColor: 'rgba(201, 168, 76, 0.1)', 
+        borderWidth: 2,
+        pointBackgroundColor: '#090909',
+        pointBorderColor: '#C9A84C',
+        pointRadius: 4,
+        fill: true,
+        tension: 0.3 // Gives the line a smooth curve
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: function(context) {
+              return '₹' + context.parsed.y.toLocaleString('en-IN');
+            }
+          }
+        }
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          grid: { color: 'rgba(255, 255, 255, 0.05)' },
+          ticks: { color: '#666', font: { family: "'DM Sans', sans-serif" } }
+        },
+        x: {
+          grid: { display: false },
+          ticks: { color: '#666', font: { family: "'DM Sans', sans-serif" } }
+        }
+      }
+    }
+  });
+}
+
+// Listen for the "Update Chart" button click
+document.getElementById('update-chart-btn').addEventListener('click', () => {
+  renderCustomSalesChart();
+});
 /* ═══════════════════════════════════════════════════
    ORDER TABLE
 ═══════════════════════════════════════════════════ */
