@@ -2208,12 +2208,12 @@ async function saveCloudSettings(settingsData) {
     this.style.borderColor = 'var(--gold-bd)';
   });
 })();
-// --- DYNAMIC GENDER OPTIONS FOR ADMIN ---
+// --- DYNAMIC GENDER AND OPTIONS FOR ADMIN ---
 document.getElementById('p-cat').addEventListener('change', function() {
   const genderSelect = document.getElementById('p-gender');
   const currentGender = genderSelect.value;
   
-  // Base options
+  // 1. Base Gender Options
   let optionsHtml = `
     <option value="unisex">Unisex</option>
     <option value="him">Him</option>
@@ -2232,6 +2232,36 @@ document.getElementById('p-cat').addEventListener('change', function() {
     genderSelect.value = currentGender;
   } else {
     genderSelect.value = 'unisex';
+  }
+
+  // 2. Dynamic Sizes & Colors Control
+  const rowWrap = document.getElementById('opt-sizes-colors');
+  const wrapSizes = document.getElementById('wrap-sizes');
+  const wrapColors = document.getElementById('wrap-colors');
+  
+  if (rowWrap && wrapSizes && wrapColors) {
+    // Hide everything by default
+    wrapSizes.style.display = 'none';
+    wrapColors.style.display = 'none';
+    rowWrap.style.display = 'none';
+    
+    if (this.value === 'sneakers') {
+      // Sneakers need BOTH
+      wrapSizes.style.display = 'block';
+      wrapColors.style.display = 'block';
+      rowWrap.style.display = 'flex';
+      
+    } else if (this.value === 'watches') {
+      // Watches only need COLORS
+      wrapColors.style.display = 'block';
+      rowWrap.style.display = 'flex';
+      document.getElementById('p-sizes').value = ''; // Auto-clear size memory
+      
+    } else {
+      // Sunglasses & Electronics need NEITHER
+      document.getElementById('p-sizes').value = '';
+      document.getElementById('p-colors').value = '';
+    }
   }
 });
 </script>
