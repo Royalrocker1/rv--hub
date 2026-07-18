@@ -512,9 +512,10 @@
             </div>
           </div>
 
-          <div class="field-row" style="grid-column: 1 / -1; display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px;">
-            <div class="field" style="margin:0;"><label>Sizes (Comma Sep)</label><input type="text" id="p-sizes" placeholder="e.g. UK 7, UK 8, UK 9"></div>
-            <div class="field" style="margin:0;"><label>Colors (Comma Sep)</label><input type="text" id="p-colors" placeholder="e.g. Red, Blue, Matte Black"></div>
+          <!-- DYNAMIC SIZES AND COLORS -->
+          <div class="field-row" id="opt-sizes-colors" style="grid-column: 1 / -1; display: flex; gap: 14px; margin-bottom: 14px;">
+            <div class="field" id="wrap-sizes" style="margin:0; flex:1;"><label>Sizes (Comma Sep)</label><input type="text" id="p-sizes" placeholder="e.g. UK 7, UK 8, UK 9"></div>
+            <div class="field" id="wrap-colors" style="margin:0; flex:1;"><label>Colors (Comma Sep)</label><input type="text" id="p-colors" placeholder="e.g. Red, Blue, Matte Black"></div>
           </div>
 
           <div class="sale-section">
