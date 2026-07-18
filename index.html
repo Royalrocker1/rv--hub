@@ -377,7 +377,8 @@ body.cursor-click #cursor-dot{transform:translate(-50%,-50%) scale(2);}
       <button class="g-btn" data-gender="him" style="padding: 5px 14px; background: transparent; border: none; border-bottom: 2px solid transparent; color: var(--muted); font-size: .78rem; letter-spacing: 1.2px; text-transform: uppercase;">For Him</button>
       <button class="g-btn" data-gender="her" style="padding: 5px 14px; background: transparent; border: none; border-bottom: 2px solid transparent; color: var(--muted); font-size: .78rem; letter-spacing: 1.2px; text-transform: uppercase;">For Her</button>
       <button class="g-btn" data-gender="unisex" style="padding: 5px 14px; background: transparent; border: none; border-bottom: 2px solid transparent; color: var(--muted); font-size: .78rem; letter-spacing: 1.2px; text-transform: uppercase;">Unisex</button>
-    </div>
+    <button class="g-btn" id="btn-couples" data-gender="couples" style="display: none; padding: 5px 14px; background: transparent; border: none; border-bottom: 2px solid transparent; color: var(--muted); font-size: .78rem; letter-spacing: 1.2px; text-transform: uppercase;">Couples</button>
+  </div>
     <div class="grid" id="grid"></div>
   </div>
 
@@ -399,8 +400,33 @@ body.cursor-click #cursor-dot{transform:translate(-50%,-50%) scale(2);}
         <div id="det-stock" class="stock-tag"></div>
         <div class="detail-price-wrap" id="det-price"></div>
         <p class="detail-desc" id="det-desc"></p>
+        <div id="det-options-wrap" style="display:none; margin: 12px 0 16px;">
+          <div id="det-sizes-wrap" style="margin-bottom: 16px;">
+            <label style="font-size:0.7rem; color:var(--muted); text-transform:uppercase; letter-spacing:1px; margin-bottom:8px; display:block;">Select Size</label>
+            <div id="det-size-btns" style="display:flex; gap:8px; flex-wrap:wrap;"></div>
+          </div>
+          <div id="det-colors-wrap">
+            <label style="font-size:0.7rem; color:var(--muted); text-transform:uppercase; letter-spacing:1px; margin-bottom:8px; display:block;">Select Color</label>
+            <div id="det-color-btns" style="display:flex; gap:8px; flex-wrap:wrap;"></div>
+          </div>
+        </div>
+
+        <!-- CUSTOMER RATING SYSTEM WITH SUBMIT -->
+        <div id="rate-wrap" style="margin: 20px 0 24px; border-top: 1px solid var(--border); padding-top: 16px;">
+          <label style="font-size:0.7rem; color:var(--muted); text-transform:uppercase; letter-spacing:1px; margin-bottom:8px; display:block;">Rate this product</label>
+          <div style="display:flex; align-items:center; gap:16px;">
+            <div id="stars" style="display:flex; gap:8px; cursor:pointer;">
+               <span class="star" data-val="1" style="font-size:1.6rem; color:#444; transition:.2s;">★</span>
+               <span class="star" data-val="2" style="font-size:1.6rem; color:#444; transition:.2s;">★</span>
+               <span class="star" data-val="3" style="font-size:1.6rem; color:#444; transition:.2s;">★</span>
+               <span class="star" data-val="4" style="font-size:1.6rem; color:#444; transition:.2s;">★</span>
+               <span class="star" data-val="5" style="font-size:1.6rem; color:#444; transition:.2s;">★</span>
+            </div>
+            <button id="submit-rating-btn" style="display:none; padding:8px 16px; background:var(--gold); border:none; border-radius:var(--radius); color:var(--ink); font-size:0.75rem; font-weight:600; text-transform:uppercase; cursor:pointer; transition:0.2s;">Submit</button>
+          </div>
+        </div>
+
         <button class="detail-add" id="det-add">Add to Cart</button>
-      </div>
     </div>
   </div>
 </main>
@@ -425,7 +451,7 @@ body.cursor-click #cursor-dot{transform:translate(-50%,-50%) scale(2);}
       <a href="page.html?page=shipping" class="footer-link">Shipping Information</a>
       <a href="page.html?page=contact" class="footer-link">Contact Support</a>
       <a href="page.html?page=faq" class="footer-link">FAQ</a>
-    </div>
+    </div><a><a><a><a>
     <div class="footer-col">
       <h4>VIP Community</h4>
       <div class="vip-box">
@@ -621,7 +647,7 @@ function stockHtml(p){
 function getFiltered(){
   let list=[...S.products];
   if(S.category!=='all')list=list.filter(p=>p.category===S.category);
-  if(S.gender!=='all')list=list.filter(p=>p.gender===S.gender || p.gender==='unisex');
+  if(S.gender!=='all')list=list.filter(p=> S.gender==='couples' ? p.gender==='couples' : (p.gender===S.gender || p.gender==='unisex'));
   if(S.query){const q=S.query.toLowerCase();list=list.filter(p=>p.name.toLowerCase().includes(q)||(p.desc||'').toLowerCase().includes(q));}
   const ep=p=>p.is_sale?p.sale_price:p.price;
   if(S.sort==='price-asc')list.sort((a,b)=>ep(a)-ep(b));
@@ -664,9 +690,67 @@ function findProduct(id){return S.products.find(x=>String(x.id)===String(id));}
 function showDetail(id,push=true){
   const p=findProduct(id);if(!p)return;
   S.galleryImages=getProductImages(p);S.galleryIndex=0;
-  document.getElementById('det-cat').textContent=p.category.toUpperCase();
+  // Show Brand alongside Category
+  document.getElementById('det-cat').textContent = p.brand ? `${p.brand.toUpperCase()} · ${p.category.toUpperCase()}` : p.category.toUpperCase();
   document.getElementById('det-name').textContent=p.name;
   document.getElementById('det-desc').textContent=p.desc||'No description.';
+
+// Generate Size and Color Buttons
+  const optWrap = document.getElementById('det-options-wrap');
+  const sizeBtns = document.getElementById('det-size-btns');
+  const colorBtns = document.getElementById('det-color-btns');
+  
+  sizeBtns.innerHTML = ''; colorBtns.innerHTML = '';
+  document.getElementById('det-sizes-wrap').style.display = p.sizes ? 'block' : 'none';
+  document.getElementById('det-colors-wrap').style.display = p.colors ? 'block' : 'none';
+
+  if (p.sizes || p.colors) {
+    optWrap.style.display = 'block';
+    if (p.sizes) {
+      p.sizes.split(',').forEach(s => {
+        const btn = document.createElement('button');
+        btn.textContent = s.trim(); btn.className = 'opt-btn size-btn';
+        btn.style.cssText = 'padding:8px 16px; border:1px solid var(--border); background:transparent; color:var(--white); border-radius:var(--radius); transition:.2s; cursor:pointer;';
+        btn.dataset.val = s.trim();
+        btn.onclick = () => selectOpt(btn, '.size-btn');
+        sizeBtns.appendChild(btn);
+      });
+    }
+    if (p.colors) {
+      p.colors.split(',').forEach(c => {
+        const btn = document.createElement('button');
+        btn.textContent = c.trim(); btn.className = 'opt-btn color-btn';
+        btn.style.cssText = 'padding:8px 16px; border:1px solid var(--border); background:transparent; color:var(--white); border-radius:var(--radius); transition:.2s; cursor:pointer;';
+        btn.dataset.val = c.trim();
+        btn.onclick = () => selectOpt(btn, '.color-btn');
+        colorBtns.appendChild(btn);
+      });
+    }
+  } else { optWrap.style.display = 'none'; }
+
+  function selectOpt(btn, selector) {
+    btn.parentElement.querySelectorAll(selector).forEach(b => { 
+      b.style.borderColor = 'var(--border)'; 
+      b.style.background = 'transparent'; 
+      b.dataset.selected = 'false'; 
+    });
+    btn.style.borderColor = 'var(--gold)'; 
+    btn.style.background = 'var(--gold-dim)'; 
+    btn.dataset.selected = 'true';
+  }
+  
+  // Reset or Load star colors from Browser Memory
+  document.querySelectorAll('.star').forEach(s => s.style.color = '#444');
+  const submitBtn = document.getElementById('submit-rating-btn');
+  if (submitBtn) submitBtn.style.display = 'none';
+  
+  const savedRating = localStorage.getItem('rated_' + id);
+  if (savedRating) {
+     try {
+         const parsed = JSON.parse(savedRating);
+         document.querySelectorAll('.star').forEach((s, i) => s.style.color = i < parsed.rating ? '#C9A84C' : '#444');
+     } catch(e){}
+  }
   document.getElementById('det-stock').innerHTML=stockHtml(p);
   document.getElementById('det-price').innerHTML=p.is_sale?`<span class="detail-price" style="color:var(--gold)">${inr(p.sale_price)}</span><span class="detail-was">${inr(p.price)}</span>`:`<span class="detail-price">${inr(p.price)}</span>`;
   const btn=document.getElementById('det-add');btn.disabled=p.stock<=0;btn.textContent=p.stock<=0?'Sold Out':'Add to Cart';btn.dataset.add=id;
@@ -717,10 +801,21 @@ function cartTotal(){return S.cart.reduce((s,item)=>{const p=findProduct(item.id
 
 function addToCart(id){
   const p=findProduct(id);if(!p||p.stock<=0)return;
-  const item=S.cart.find(x=>String(x.id)===String(id));
+  
+  const selSize = document.querySelector('.size-btn[data-selected="true"]');
+  const selColor = document.querySelector('.color-btn[data-selected="true"]');
+  
+  const size = selSize ? selSize.dataset.val : '';
+  const color = selColor ? selColor.dataset.val : '';
+  
+  if (p.sizes && p.sizes.trim() !== '' && !size) { toast('Please select a size!', 'warn'); return; }
+  if (p.colors && p.colors.trim() !== '' && !color) { toast('Please select a color!', 'warn'); return; }
+  
+  const item=S.cart.find(x=>String(x.id)===String(id) && x.size===size && x.color===color);
   if(item){if(item.qty>=p.stock){toast('Max stock reached','warn');return;}item.qty++;}
-  else S.cart.push({id,qty:1});
-  renderCart();openCart();
+  else S.cart.push({id, qty:1, size, color});
+  
+  renderCart(); openCart(); 
   const badge=document.getElementById('cart-count');badge.classList.remove('bounce');raf(()=>raf(()=>badge.classList.add('bounce')));
   badge.addEventListener('animationend',()=>badge.classList.remove('bounce'),{once:true});
   const cartBtn=document.getElementById('cart-toggle');cartBtn.classList.remove('pulsing');raf(()=>raf(()=>cartBtn.classList.add('pulsing')));
@@ -728,10 +823,10 @@ function addToCart(id){
   toast(`${p.name} added`,'ok');
 }
 
-function changeQty(id,delta){
-  const item=S.cart.find(x=>String(x.id)===String(id));const p=findProduct(id);if(!item)return;
-  item.qty=Math.min(item.qty+delta,p?.stock??99);
-  if(item.qty<=0)S.cart=S.cart.filter(x=>String(x.id)!==String(id));
+function changeQty(idx,delta){
+  const item=S.cart[idx];const p=findProduct(item?.id);if(!item||!p)return;
+  item.qty=Math.min(item.qty+delta,p.stock??99);
+  if(item.qty<=0)S.cart.splice(idx,1);
   renderCart();
 }
 
@@ -739,26 +834,27 @@ function renderCart(){
   const container=document.getElementById('cart-items'),totalEl=document.getElementById('cart-total-display'),checkBtn=document.getElementById('checkout-btn');
   const count=S.cart.reduce((s,i)=>s+i.qty,0);document.getElementById('cart-count').textContent=count;checkBtn.disabled=!S.cart.length;
   if(!S.cart.length){container.innerHTML='<div class="cart-empty"><span style="font-size:2rem;opacity:.3">✦</span>Your cart is empty</div>';totalEl.textContent='₹0';return;}
-  container.innerHTML=S.cart.map(item=>{
+  
+  container.innerHTML=S.cart.map((item, i)=>{
     const p=findProduct(item.id);if(!p)return'';
     const price=p.is_sale?p.sale_price:p.price;const thumb=getProductImages(p)[0];
     return`<div class="cart-item">
-      <img class="cart-thumb" src="${esc(thumb)}" onerror="this.src='https://images.unsplash.com/photo-1542291026-7eec264c27ff?q=80&w=100'" alt="${esc(p.name)}">
+      <img class="cart-thumb" src="${esc(thumb)}" alt="${esc(p.name)}">
       <div class="cart-item-info">
         <div class="cart-item-name">${esc(p.name)}</div>
-        <div class="cart-item-price">${inr(price*item.qty)}</div>
+        ${item.size || item.color ? `<div style="font-size:0.75rem; color:var(--gold); margin-top:2px;">${item.size ? 'Size: '+esc(item.size) : ''} ${item.size && item.color ? ' | ' : ''} ${item.color ? 'Color: '+esc(item.color) : ''}</div>` : ''}
+        <div class="cart-item-price" style="margin-top:4px;">${inr(price*item.qty)}</div>
         <div class="qty-row">
-          <button class="qty-btn" data-qty="${item.id}" data-delta="-1">−</button>
+          <button class="qty-btn" data-idx="${i}" data-delta="-1">−</button>
           <span class="qty-num">${item.qty}</span>
-          <button class="qty-btn" data-qty="${item.id}" data-delta="1">+</button>
+          <button class="qty-btn" data-idx="${i}" data-delta="1">+</button>
         </div>
       </div>
-      <button class="remove-item" data-remove="${item.id}">×</button>
+      <button class="remove-item" data-rm="${i}">×</button>
     </div>`;
   }).join('');
   totalEl.textContent=inr(cartTotal());
 }
-
 function openCart(){document.getElementById('cart').classList.add('open');document.getElementById('overlay').classList.add('show');}
 function closeCart(){document.getElementById('cart').classList.remove('open');document.getElementById('overlay').classList.remove('show');}
 
@@ -852,7 +948,7 @@ async function placeOrder(){
     area:document.getElementById('o-area').value.trim(),
     country:document.getElementById('o-country').value.trim(),
     address:document.getElementById('o-addr').value.trim(),
-    items:S.cart.map(item=>{const p=findProduct(item.id);return`${p?.name||'?'} ×${item.qty}`;}).join(', '),
+    items:S.cart.map(item=>{const p=findProduct(item.id);return`${p?.name||'?'} ${item.size?`[${item.size}]`:''} ${item.color?`[${item.color}]`:''} ×${item.qty}`;}).join(', '),
     total,pay_mode:S.payMode,
     advance_paid:S.payMode==='prepaid'?total:advance,
     cod_remaining:S.payMode==='pcod'?Math.max(0,total-advance):0,
@@ -992,11 +1088,54 @@ document.getElementById('grid').addEventListener('click',e=>{
 });
 document.getElementById('detail').addEventListener('click',e=>{const a=e.target.closest('[data-add]')?.dataset.add;if(a)addToCart(a);});
 document.getElementById('cart-items').addEventListener('click',e=>{
-  const q=e.target.closest('[data-qty]');const r=e.target.closest('[data-remove]');
-  if(q)changeQty(q.dataset.qty,+q.dataset.delta);
-  if(r){const id=r.dataset.remove;const ci=r.closest('.cart-item');if(ci){ci.classList.add('removing');ci.addEventListener('animationend',()=>{S.cart=S.cart.filter(x=>String(x.id)!==String(id));renderCart();},{once:true});}else{S.cart=S.cart.filter(x=>String(x.id)!==String(id));renderCart();}}
+  const q=e.target.closest('[data-idx]');const r=e.target.closest('[data-rm]');
+  if(q)changeQty(+q.dataset.idx,+q.dataset.delta);
+  if(r){
+    const idx=+r.dataset.rm;
+    const ci=r.closest('.cart-item');
+    if(ci){
+      ci.classList.add('removing');
+      ci.addEventListener('animationend',()=>{S.cart.splice(idx,1);renderCart();},{once:true});
+    }else{
+      S.cart.splice(idx,1);renderCart();
+    }
+  }
 });
-document.querySelectorAll('.cat').forEach(btn=>{btn.addEventListener('click',()=>{document.querySelectorAll('.cat').forEach(b=>b.classList.remove('active'));btn.classList.add('active');S.category=btn.dataset.cat;setAmbient(S.category);renderGrid();});});// --- APP-LIKE SEARCH BEHAVIOR ---
+document.querySelectorAll('.cat').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.cat').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    S.category = btn.dataset.cat;
+    
+    // --- NEW: Toggle the Couples button visibility ---
+    const couplesBtn = document.getElementById('btn-couples');
+    if (S.category === 'watches') {
+      // Show if watches is selected
+      couplesBtn.style.display = 'inline-block';
+    } else {
+      // Hide for all other categories
+      couplesBtn.style.display = 'none';
+      
+      // If the user had "Couples" selected but switches to another category,
+      // reset the gender filter back to "All Genders" automatically to prevent blank grids.
+      if (S.gender === 'couples') {
+        S.gender = 'all';
+        document.querySelectorAll('.g-btn').forEach(b => { 
+          b.style.color = 'var(--muted)'; 
+          b.style.borderBottomColor = 'transparent'; 
+        });
+        const allBtn = document.querySelector('.g-btn[data-gender="all"]');
+        allBtn.style.color = 'var(--gold)'; 
+        allBtn.style.borderBottomColor = 'var(--gold)';
+      }
+    }
+    
+    setAmbient(S.category);
+    renderGrid();
+  });
+});
+
+// --- APP-LIKE SEARCH BEHAVIOR ---
 const searchInput = document.getElementById('search');
 const heroBanner = document.getElementById('hero-banner');
 
@@ -1069,6 +1208,69 @@ function initCardTilt(){
   const ambient=document.getElementById('ambient');let ticking=false;
   window.addEventListener('scroll',()=>{if(!ticking){raf(()=>{ambient.style.transform=`translateY(${window.scrollY*.1}px)`;ticking=false;});ticking=true;}},{passive:true});
 })();
+// --- CUSTOMER RATING SUBMISSION (WITH LOCALSTORAGE MEMORY) ---
+let currentRatingVal = 0;
+const stars = document.querySelectorAll('.star');
+const submitBtn = document.getElementById('submit-rating-btn');
+
+stars.forEach(star => {
+  star.addEventListener('click', () => {
+    currentRatingVal = +star.dataset.val;
+    
+    // Light up stars instantly for UI feedback
+    stars.forEach((s, i) => s.style.color = i < currentRatingVal ? '#C9A84C' : '#444');
+    
+    // Show the submit button
+    submitBtn.style.display = 'block';
+    
+    // Check if they are updating a previous rating
+    const pid = document.getElementById('det-add').dataset.add;
+    const existingData = localStorage.getItem('rated_' + pid);
+    submitBtn.textContent = existingData ? 'Update Rating' : 'Submit Rating';
+  });
+});
+
+submitBtn.addEventListener('click', async () => {
+  if (currentRatingVal === 0) return;
+  const pid = document.getElementById('det-add').dataset.add;
+  const existingData = localStorage.getItem('rated_' + pid);
+  
+  submitBtn.disabled = true;
+  submitBtn.textContent = 'Saving...';
+  
+  if (existingData) {
+     // UPDATE EXISTING RATING
+     try {
+         const parsed = JSON.parse(existingData);
+         // Fixed: 'ratings' instead of 'rating'
+         const { error } = await sb.from('ratings').update({ rating: currentRatingVal }).eq('id', parsed.id);
+         if (error) throw error;
+         
+         localStorage.setItem('rated_' + pid, JSON.stringify({ id: parsed.id, rating: currentRatingVal }));
+         toast('Rating updated!', 'ok');
+     } catch(e) {
+         toast('Error updating rating', 'err');
+         console.error(e);
+     }
+  } else {
+     // INSERT NEW RATING
+     // Fixed: 'ratings' instead of 'rating'
+     const { data, error } = await sb.from('ratings').insert([{ product_id: Number(pid), rating: currentRatingVal }]).select();
+     if (error) {
+         toast('Error saving rating', 'err');
+         console.error(error);
+     } else if (data && data.length > 0) {
+         // Save the database ID and star count to the browser memory
+         localStorage.setItem('rated_' + pid, JSON.stringify({ id: data[0].id, rating: currentRatingVal }));
+         toast('Thank you for rating!', 'ok');
+     }
+  }
+  
+  submitBtn.disabled = false;
+  submitBtn.textContent = 'Saved ✓';
+  setTimeout(() => { submitBtn.style.display = 'none'; }, 2000); // Hide button after saving
+});
+  
 async function initStore(){
   await loadCfg();
   

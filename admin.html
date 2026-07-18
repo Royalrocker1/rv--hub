@@ -503,6 +503,20 @@
               <option value="her">Her</option>
             </select>
           </div>
+
+         <div class="field-row" style="grid-column: 1 / -1; display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+            <div class="field" style="margin:0;"><label>Brand</label><input type="text" id="p-brand" placeholder="e.g. Nike, Rolex"></div>
+            <div class="toggle-row" style="margin: 0; align-items: center; display: flex; padding-top: 20px;">
+              <label class="switch"><input type="checkbox" id="p-featured"><span class="slider"></span></label>
+              <label for="p-featured" style="color:var(--gold); letter-spacing: 1px; text-transform: uppercase; font-size: 0.75rem; margin-left: 10px;">🌟 Featured Product</label>
+            </div>
+          </div>
+
+          <div class="field-row" style="grid-column: 1 / -1; display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px;">
+            <div class="field" style="margin:0;"><label>Sizes (Comma Sep)</label><input type="text" id="p-sizes" placeholder="e.g. UK 7, UK 8, UK 9"></div>
+            <div class="field" style="margin:0;"><label>Colors (Comma Sep)</label><input type="text" id="p-colors" placeholder="e.g. Red, Blue, Matte Black"></div>
+          </div>
+
           <div class="sale-section">
             <div class="toggle-row">
               <label class="switch"><input type="checkbox" id="p-on-sale"><span class="slider"></span></label>
@@ -1210,13 +1224,25 @@ function softDelete(id) { deleteOrder(id); }
 
 
 /* ── ORDER DETAIL MODAL ── */
+
 function openOrderModal(id) {
   const o = adm.orders.find(x => x.id === id);
   if (!o) return;
   
+  // Kept the ID in the title so you know which order you are looking at, 
+  // but removed it from the WhatsApp message below.
   document.getElementById('order-modal-title').textContent = `Order ${o.id}`;
   
   const addressStr = [o.address, o.area, o.city, o.state, o.pincode].filter(Boolean).join(', ');
+
+  // --- UPDATED: Cleaned up message (No Order ID, No Dropship Intro) ---
+  const supplierMsg = encodeURIComponent(
+    `*Items Ordered:* ${o.items || ''}\n\n` +
+    `*Delivery Address:*\n` +
+    `${o.customer}\n` +
+    `${addressStr}\n` +
+    `*Phone:* ${o.phone}`
+  );
 
   let paymentHtml = '';
   if (o.pay_mode === 'prepaid') {
@@ -1234,10 +1260,6 @@ function openOrderModal(id) {
     `;
   }
 
-  const screenshotHtml = o.screenshot 
-    ? `<div><div class="od-label" style="margin-bottom:8px">Payment Screenshot</div><img src="${o.screenshot}" class="screenshot-thumb" alt="Payment proof" onclick="window.open(this.src,'_blank')"><p style="font-size:.7rem;color:var(--muted);margin-top:4px">Click to view full size</p></div>` 
-    : '';
-
   const statuses = [
     { val: 'pending_verification', label: 'Pending Verification' },
     { val: 'verified', label: 'Verified (Processing)' },
@@ -1246,10 +1268,8 @@ function openOrderModal(id) {
     { val: 'failed', label: 'Failed / Rejected' }
   ];
 
-  // FIX 1: We added inline CSS to force the options to have a dark background and white text!
   const optionsHtml = statuses.map(s => `<option value="${s.val}" ${o.pay_status === s.val ? 'selected' : ''} style="background:#111; color:#fff;">${s.label}</option>`).join('');
 
-  // FIX 2: We split the items string and pushed the Quantity to its own column!
   const itemsListHtml = (o.items || '').split(', ').map(itemStr => {
     const parts = itemStr.split(' ×');
     const name = parts[0];
@@ -1259,6 +1279,8 @@ function openOrderModal(id) {
               <span style="color:var(--gold); font-family:'DM Mono',monospace; font-weight:600; font-size:0.9rem;">QTY: ${esc(qty)}</span>
             </div>`;
   }).join('');
+
+  // --- UPDATED: Removed the screenshot HTML injection entirely ---
 
   document.getElementById('order-modal-body').innerHTML = `
     <div class="order-detail-grid">
@@ -1274,7 +1296,6 @@ function openOrderModal(id) {
       ${paymentHtml}
       <div class="od-field"><div class="od-label">Ordered</div><div class="od-val">${fmtDate(o.timestamp)} ${fmtTime(o.timestamp)}</div></div>
     </div>
-    ${screenshotHtml}
     
     <div style="margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border);">
       <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
@@ -1282,8 +1303,14 @@ function openOrderModal(id) {
         <select id="modal-status-select-${o.id}" style="flex: 1; padding: 8px 12px; background: #1c1c1c; border: 1px solid var(--border); color: var(--gold); border-radius: var(--radius); outline: none; cursor: pointer;">
           ${optionsHtml}
         </select>
-        <button class="btn" style="background: var(--gold); color: var(--ink); border: none;" onclick="updateOrderStatus('${o.id}', document.getElementById('modal-status-select-${o.id}').value)">
+        <button class="btn" style="background: var(--gold); color: var(--ink); border: none;" onclick="updateOrderStatus('${o.id}', document.getElementById('modal-status-select-${o.id}').value); closeOrderModal();">
           Save Status
+        </button>
+          Save Status
+        </button>
+        
+        <button class="btn" style="background: var(--info-bg); color: var(--info); border: 1px solid rgba(41,128,185,.3);" onclick="window.open('https://wa.me/?text=${supplierMsg}', '_blank')">
+          📤 Forward to Supplier
         </button>
       </div>
       <div style="margin-top: 16px; text-align: right;">
@@ -1295,9 +1322,20 @@ function openOrderModal(id) {
   
   document.getElementById('order-modal').classList.add('show');
 }
-function closeOrderModal() { document.getElementById('order-modal').classList.remove('show'); }
-document.getElementById('close-order-modal').addEventListener('click', closeOrderModal);
+function closeOrderModal() { 
+  document.getElementById('order-modal').classList.remove('show'); 
+}
 
+// 1. Listens for the "Close ×" button click
+const closeBtn = document.getElementById('close-order-modal');
+if (closeBtn) closeBtn.addEventListener('click', closeOrderModal);
+
+// 2. PRO FEATURE: Closes the popup if you click the dark background outside the box
+document.getElementById('order-modal').addEventListener('click', (e) => {
+  if (e.target.id === 'order-modal') {
+    closeOrderModal();
+  }
+});
 /* ═══════════════════════════════════════════════════
    FIX #2 — UPGRADED IMAGE UPLOAD SYSTEM
    - Drag & drop
@@ -1581,7 +1619,13 @@ async function saveProduct() {
     gender:    document.getElementById('p-gender').value,
     desc:      document.getElementById('p-desc').value.trim(),
     image:     primaryImage,   // single primary image (backward compat)
-    images:    allImages.length ? allImages : [primaryImage]  // full array for gallery
+    images:    allImages.length ? allImages : [primaryImage],  // full array for gallery
+    
+    brand:       document.getElementById('p-brand').value.trim(),
+    sizes:       document.getElementById('p-sizes').value.trim(),
+    colors:      document.getElementById('p-colors').value.trim(),
+    is_featured: document.getElementById('p-featured').checked
+    
   };
 
 if (editId) {
@@ -1615,10 +1659,20 @@ function startEditProduct(id) {
    * Always pre-fill with the stored sale_price (even when is_sale is false)
    * so the value is preserved if the admin saves without touching it.
    */
-  document.getElementById('p-sale').value = (p.sale_price != null && p.sale_price !== 0) ? p.sale_price : '';
+document.getElementById('p-sale').value = (p.sale_price != null && p.sale_price !== 0) ? p.sale_price : '';
   document.getElementById('p-cat').value  = p.category;
+  
+  // Trigger dynamic gender update
+  document.getElementById('p-cat').dispatchEvent(new Event('change'));
+  
   document.getElementById('p-gender').value = p.gender || 'unisex';
   document.getElementById('p-desc').value = p.desc || '';
+  // --- LOAD NEW FIELDS ---
+  document.getElementById('p-brand').value = p.brand || '';
+  document.getElementById('p-sizes').value = p.sizes || '';
+  document.getElementById('p-colors').value = p.colors || '';
+  document.getElementById('p-featured').checked = !!p.is_featured;
+  
 
   // Show current image thumbnail
   const imgWrap  = document.getElementById('current-img-wrap');
@@ -1690,7 +1744,13 @@ function deleteProduct(id) {
 
 document.getElementById('cancel-edit-btn').addEventListener('click', resetProductForm);
 function resetProductForm() {
-  ['edit-id', 'p-name', 'p-price', 'p-stock', 'p-sale', 'p-desc', 'p-img-url'].forEach(id => document.getElementById(id).value = '');
+  ['edit-id', 'p-name', 'p-price', 'p-stock', 'p-sale', 'p-desc', 'p-img-url', 'p-brand', 'p-sizes', 'p-colors'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('p-featured').checked = false;
+  
+  // Reset category and trigger options refresh
+  document.getElementById('p-cat').value = 'sneakers';
+  document.getElementById('p-cat').dispatchEvent(new Event('change'));
+  
   document.getElementById('p-gender').value = 'unisex';
   document.getElementById('p-on-sale').checked = false;
   adm.uploadedImages = [];
@@ -2147,6 +2207,32 @@ async function saveCloudSettings(settingsData) {
     this.style.borderColor = 'var(--gold-bd)';
   });
 })();
+// --- DYNAMIC GENDER OPTIONS FOR ADMIN ---
+document.getElementById('p-cat').addEventListener('change', function() {
+  const genderSelect = document.getElementById('p-gender');
+  const currentGender = genderSelect.value;
+  
+  // Base options
+  let optionsHtml = `
+    <option value="unisex">Unisex</option>
+    <option value="him">Him</option>
+    <option value="her">Her</option>
+  `;
+  
+  // Add Couples only if Watches is selected
+  if (this.value === 'watches') {
+    optionsHtml += `<option value="couples">Couples</option>`;
+  }
+  
+  genderSelect.innerHTML = optionsHtml;
+  
+  // Keep the previous selection if it's still valid
+  if (Array.from(genderSelect.options).some(opt => opt.value === currentGender)) {
+    genderSelect.value = currentGender;
+  } else {
+    genderSelect.value = 'unisex';
+  }
+});
 </script>
 </body>
 </html>
