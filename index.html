@@ -574,7 +574,7 @@ const sb=supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
 
 const BG={all:'https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?q=80&w=1000',sneakers:'https://images.unsplash.com/photo-1552346154-21d32810aba3?q=80&w=1000',watches:'https://images.unsplash.com/photo-1547996160-81dfa63595aa?q=80&w=1000',sunglasses:'https://images.unsplash.com/photo-1511499767390-90342f16b147?q=80&w=1000',electronics:'https://images.unsplash.com/photo-1550009158-9ebf69173e03?q=80&w=1000'};
 
-const S={products:[],cart:[],cfg:{},category:'all',gender:'all',query:'',sort:'default',step:1,lastStep:1,payMode:null,screenshotB64:null,screenshotB64Cod:null,galleryImages:[],galleryIndex:0};
+const S={products:[],cart:[],ratings:[],cfg:{},category:'all',gender:'all',query:'',sort:'default',step:1,lastStep:1,payMode:null,screenshotB64:null,screenshotB64Cod:null,galleryImages:[],galleryIndex:0};
 const esc=s=>typeof s==='string'?s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'):String(s??'');
 const inr=n=>'₹'+(+n||0).toLocaleString('en-IN');
 const raf=fn=>requestAnimationFrame(fn);
@@ -667,14 +667,21 @@ function renderGrid(){
       const pct=p.is_sale?Math.round(((p.price-p.sale_price)/p.price)*100):0;
       const delay=Math.min(i*55,500);
       const imgs=getProductImages(p);
-      return`<article class="card sr" style="transition-delay:${delay}ms;" data-pid="${p.id}">
+      
+      // NEW: Calculate the true average star rating for this specific product
+      const pRatings = S.ratings ? S.ratings.filter(r => String(r.product_id) === String(p.id)) : [];
+      const avgRating = pRatings.length ? (pRatings.reduce((sum, r) => sum + r.rating, 0) / pRatings.length).toFixed(1) : 0;
+      
+      // NEW: "data-view" and "cursor:pointer" added to the whole <article> so the entire card is clickable!
+      return`<article class="card sr" style="transition-delay:${delay}ms; cursor:pointer;" data-pid="${p.id}" data-view="${p.id}">
         <div class="card-img-wrap">
           ${p.is_sale&&!oos?`<div class="badge">−${pct}%</div>`:''}
+          ${avgRating > 0 ? `<div style="position:absolute; bottom:10px; left:10px; z-index:2; background:rgba(0,0,0,.75); color:var(--gold); font-size:.7rem; padding:3px 8px; border-radius:10px; backdrop-filter:blur(8px); display:flex; align-items:center; gap:4px; font-weight:600; letter-spacing:0.5px;">★ ${avgRating}</div>` : ''}
           <img class="card-img" src="${esc(imgs[0])}" onerror="this.src='https://images.unsplash.com/photo-1542291026-7eec264c27ff?q=80&w=400'" alt="${esc(p.name)}" loading="lazy">
           ${imgs.length>1?`<div class="img-count-badge">🖼 ${imgs.length}</div>`:''}
         </div>
         <div class="card-body">
-          <div class="card-name" data-view="${p.id}">${esc(p.name)}</div>
+          <div class="card-name">${esc(p.name)}</div>
           ${stockHtml(p)}
           <div class="price-row">${priceHtml(p)}</div>
           <button class="add-btn" ${oos?'disabled':''} data-add="${p.id}">${oos?'Sold Out':'Add to Cart'}</button>
@@ -690,12 +697,13 @@ function findProduct(id){return S.products.find(x=>String(x.id)===String(id));}
 function showDetail(id,push=true){
   const p=findProduct(id);if(!p)return;
   S.galleryImages=getProductImages(p);S.galleryIndex=0;
+  
   // Show Brand alongside Category
   document.getElementById('det-cat').textContent = p.brand ? `${p.brand.toUpperCase()} · ${p.category.toUpperCase()}` : p.category.toUpperCase();
   document.getElementById('det-name').textContent=p.name;
   document.getElementById('det-desc').textContent=p.desc||'No description.';
 
-// Generate Size and Color Buttons
+  // Generate Size and Color Buttons
   const optWrap = document.getElementById('det-options-wrap');
   const sizeBtns = document.getElementById('det-size-btns');
   const colorBtns = document.getElementById('det-color-btns');
@@ -706,6 +714,7 @@ function showDetail(id,push=true){
 
   if (p.sizes || p.colors) {
     optWrap.style.display = 'block';
+    
     if (p.sizes) {
       p.sizes.split(',').forEach(s => {
         const btn = document.createElement('button');
@@ -716,18 +725,43 @@ function showDetail(id,push=true){
         sizeBtns.appendChild(btn);
       });
     }
+    
     if (p.colors) {
       p.colors.split(',').forEach(c => {
+        // --- SMART PARSING LOGIC (THE COLON TRICK) ---
+        let colorName = c.trim();
+        let targetIndex = -1; 
+        
+        if (colorName.includes(':')) {
+          const parts = colorName.split(':');
+          colorName = parts[0].trim(); 
+          targetIndex = parseInt(parts[1].trim()) - 1; // Humans count 1,2,3. Code counts 0,1,2.
+        }
+        // ---------------------------------------------
+
         const btn = document.createElement('button');
-        btn.textContent = c.trim(); btn.className = 'opt-btn color-btn';
+        btn.textContent = colorName; 
+        btn.className = 'opt-btn color-btn';
         btn.style.cssText = 'padding:8px 16px; border:1px solid var(--border); background:transparent; color:var(--white); border-radius:var(--radius); transition:.2s; cursor:pointer;';
-        btn.dataset.val = c.trim();
-        btn.onclick = () => selectOpt(btn, '.color-btn');
+        btn.dataset.val = colorName;
+        
+        btn.onclick = () => {
+          selectOpt(btn, '.color-btn');
+          // If you provided a number, jump exactly to that image!
+          if (targetIndex >= 0 && S.galleryImages && S.galleryImages.length > targetIndex) {
+            S.galleryIndex = targetIndex;
+            renderGallery();
+          }
+        };
+        
         colorBtns.appendChild(btn);
       });
     }
-  } else { optWrap.style.display = 'none'; }
+  } else { 
+    optWrap.style.display = 'none'; 
+  }
 
+  // Helper function to light up the selected buttons
   function selectOpt(btn, selector) {
     btn.parentElement.querySelectorAll(selector).forEach(b => { 
       b.style.borderColor = 'var(--border)'; 
@@ -751,19 +785,21 @@ function showDetail(id,push=true){
          document.querySelectorAll('.star').forEach((s, i) => s.style.color = i < parsed.rating ? '#C9A84C' : '#444');
      } catch(e){}
   }
+  
   document.getElementById('det-stock').innerHTML=stockHtml(p);
   document.getElementById('det-price').innerHTML=p.is_sale?`<span class="detail-price" style="color:var(--gold)">${inr(p.sale_price)}</span><span class="detail-was">${inr(p.price)}</span>`:`<span class="detail-price">${inr(p.price)}</span>`;
-  const btn=document.getElementById('det-add');btn.disabled=p.stock<=0;btn.textContent=p.stock<=0?'Sold Out':'Add to Cart';btn.dataset.add=id;
+  const addBtn=document.getElementById('det-add');addBtn.disabled=p.stock<=0;addBtn.textContent=p.stock<=0?'Sold Out':'Add to Cart';addBtn.dataset.add=id;
+  
   renderGallery();
   document.getElementById('shop').style.display='none';
-document.getElementById('filter-bar').style.display='none';
-if (document.getElementById('hero-banner')) document.getElementById('hero-banner').style.display='none';
+  document.getElementById('filter-bar').style.display='none';
+  if (document.getElementById('hero-banner')) document.getElementById('hero-banner').style.display='none';
+  
   const detail=document.getElementById('detail');detail.style.display='block';
   detail.classList.remove('page-enter');raf(()=>raf(()=>detail.classList.add('page-enter')));
   initRippleButtons();setAmbient(p.category);window.scrollTo({top:0,behavior:'smooth'});
   if(push)history.pushState({view:'detail',id},'','');
 }
-
 function renderGallery(){
   const imgs=S.galleryImages,idx=S.galleryIndex;
   const mainImg=document.getElementById('det-img');
@@ -1083,9 +1119,14 @@ document.getElementById('checkout-btn').addEventListener('click',()=>{closeCart(
 document.getElementById('close-checkout-btn').addEventListener('click',closeCheckout);
 document.getElementById('success-close-btn').addEventListener('click',()=>{closeCheckout();goHome();});
 document.getElementById('grid').addEventListener('click',e=>{
-  const v=e.target.closest('[data-view]')?.dataset.view;const a=e.target.closest('[data-add]')?.dataset.add;
-  if(v)showDetail(v);if(a)addToCart(a);
+  const a=e.target.closest('[data-add]')?.dataset.add;
+  // If they clicked Add to Cart, do that and immediately STOP so it doesn't open the page!
+  if(a){ addToCart(a); return; } 
+  
+  const v=e.target.closest('[data-view]')?.dataset.view;
+  if(v)showDetail(v);
 });
+
 document.getElementById('detail').addEventListener('click',e=>{const a=e.target.closest('[data-add]')?.dataset.add;if(a)addToCart(a);});
 document.getElementById('cart-items').addEventListener('click',e=>{
   const q=e.target.closest('[data-idx]');const r=e.target.closest('[data-rm]');
@@ -1242,33 +1283,40 @@ submitBtn.addEventListener('click', async () => {
      // UPDATE EXISTING RATING
      try {
          const parsed = JSON.parse(existingData);
-         // Fixed: 'ratings' instead of 'rating'
          const { error } = await sb.from('ratings').update({ rating: currentRatingVal }).eq('id', parsed.id);
          if (error) throw error;
          
          localStorage.setItem('rated_' + pid, JSON.stringify({ id: parsed.id, rating: currentRatingVal }));
          toast('Rating updated!', 'ok');
+         
+         // NEW: Instantly update memory and redraw the storefront grid!
+         const idx = S.ratings.findIndex(r => String(r.id) === String(parsed.id));
+         if(idx !== -1) S.ratings[idx].rating = currentRatingVal;
+         renderGrid();
+         
      } catch(e) {
          toast('Error updating rating', 'err');
          console.error(e);
      }
   } else {
      // INSERT NEW RATING
-     // Fixed: 'ratings' instead of 'rating'
      const { data, error } = await sb.from('ratings').insert([{ product_id: Number(pid), rating: currentRatingVal }]).select();
      if (error) {
          toast('Error saving rating', 'err');
          console.error(error);
      } else if (data && data.length > 0) {
-         // Save the database ID and star count to the browser memory
          localStorage.setItem('rated_' + pid, JSON.stringify({ id: data[0].id, rating: currentRatingVal }));
          toast('Thank you for rating!', 'ok');
+         
+         // NEW: Instantly update memory and redraw the storefront grid!
+         S.ratings.push(data[0]);
+         renderGrid();
      }
   }
   
   submitBtn.disabled = false;
   submitBtn.textContent = 'Saved ✓';
-  setTimeout(() => { submitBtn.style.display = 'none'; }, 2000); // Hide button after saving
+  setTimeout(() => { submitBtn.style.display = 'none'; }, 2000); 
 });
   
 async function initStore(){
@@ -1284,6 +1332,9 @@ async function initStore(){
   const{data,error}=await sb.from('products').select('*').order('created_at',{ascending:false});
   if(error){toast('Failed to load products','err');S.products=[];}
   else S.products=data||[];
+  // NEW: Fetch all ratings to calculate averages!
+  const { data: ratData } = await sb.from('ratings').select('*');
+  S.ratings = ratData || [];
   const loader=document.getElementById('page-loader');
   loader.classList.add('out');setTimeout(()=>loader.remove(),700);
   history.replaceState({view:'home'},'','');
