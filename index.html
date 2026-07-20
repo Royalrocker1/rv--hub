@@ -129,7 +129,7 @@ body.cursor-click #cursor-dot{transform:translate(-50%,-50%) scale(2);}
 .detail-name{font-family:'Cormorant Garamond',serif;font-size:clamp(1.8rem,4vw,2.6rem);font-weight:300;letter-spacing:2px;text-transform:uppercase;line-height:1.1;}
 .detail-price-wrap{display:flex;align-items:baseline;gap:12px;}
 .detail-price{font-size:1.8rem;font-weight:400;}.detail-was{font-size:1rem;color:var(--muted);text-decoration:line-through;}
-.detail-desc{color:var(--muted);line-height:1.8;font-size:.9rem;border-top:1px solid var(--border);padding-top:16px;}
+.detail-desc{color:var(--muted);line-height:1.8;font-size:.9rem;border-top:1px solid var(--border);padding-top:16px; white-space: pre-wrap;}
 .detail-add{padding:14px 28px;align-self:flex-start;background:var(--gold);border:none;border-radius:var(--radius);color:var(--ink);font-size:.78rem;letter-spacing:2px;text-transform:uppercase;font-weight:600;transition:opacity .2s,transform .25s var(--spring),box-shadow .25s;position:relative;overflow:hidden;}
 .detail-add:hover:not(:disabled){opacity:.9;transform:translateY(-3px);box-shadow:0 12px 30px rgba(201,168,76,.3);}
 .detail-add:disabled{background:#2a2a2a;color:#444;cursor:not-allowed;}
@@ -406,7 +406,7 @@ body.cursor-click #cursor-dot{transform:translate(-50%,-50%) scale(2);}
             <div id="det-size-btns" style="display:flex; gap:8px; flex-wrap:wrap;"></div>
           </div>
           <div id="det-colors-wrap">
-            <label style="font-size:0.7rem; color:var(--muted); text-transform:uppercase; letter-spacing:1px; margin-bottom:8px; display:block;">Select Color</label>
+            <label style="font-size:0.9rem; color:var(--gold); text-transform:uppercase; letter-spacing:1px; margin-bottom:8px; display:block;">Select Color</label>
             <div id="det-color-btns" style="display:flex; gap:8px; flex-wrap:wrap;"></div>
           </div>
         </div>
