@@ -1642,8 +1642,8 @@ if (editId) {
   }
 
   resetProductForm();
-  renderProductTable();
-  renderOverview();
+  // THE MAGIC REFRESH: Pulls fresh data directly from the cloud!
+  await loadAdminProducts();
 }
 
 function startEditProduct(id) {
@@ -1735,12 +1735,22 @@ document.getElementById('p-sale').value = (p.sale_price != null && p.sale_price 
   document.getElementById('tab-products').classList.add('active');
 }
 
-function deleteProduct(id) {
+async function deleteProduct(id) {
   const p = adm.products.find(x => x.id === id);
-  adm.products = adm.products.filter(x => x.id !== id);
-  save(KEYS.products, adm.products);
-  addLog(`Deleted product: ${p?.name || id}`); toast('Product deleted', 'warn');
-  renderProductTable(); renderOverview();
+  
+  // 1. Delete it from the Supabase cloud
+  const { error } = await db.from('products').delete().eq('id', id);
+  
+  if (error) { 
+    toast('Delete failed: ' + error.message, 'err'); 
+    return; 
+  }
+  
+  addLog(`Deleted product: ${p?.name || id}`); 
+  toast('Product deleted from Cloud', 'warn');
+  
+  // 2. Instantly auto-refresh the grid!
+  await loadAdminProducts(); 
 }
 
 document.getElementById('cancel-edit-btn').addEventListener('click', resetProductForm);
