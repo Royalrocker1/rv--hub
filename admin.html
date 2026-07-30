@@ -314,12 +314,11 @@
     <div class="gate-logo">RV HUB</div>
     <div class="gate-sub">Control Room</div>
     <div id="gate-err"></div>
-    <input type="password" id="gate-input" placeholder="••••••••" autocomplete="current-password">
-    <button id="gate-btn">Unlock</button>
+    <input type="email" id="admin-email" placeholder="ADMIN ID" autocomplete="username" style="width:100%;padding:12px 16px;margin-bottom:12px;background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:var(--radius);color:var(--white);font-size:.85rem;outline:none;text-align:center;letter-spacing:2px;transition:border-color .25s;" onfocus="this.style.borderColor='var(--gold)'" onblur="this.style.borderColor='var(--border)'">
+    <input type="password" id="admin-pass" placeholder="••••••••" autocomplete="current-password" style="width:100%;padding:12px 16px;margin-bottom:24px;background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:var(--radius);color:var(--white);font-size:.9rem;outline:none;text-align:center;letter-spacing:4px;transition:border-color .25s;" onfocus="this.style.borderColor='var(--gold)'" onblur="this.style.borderColor='var(--border)'">
+    <button id="gate-btn">Authenticate</button>
   </div>
 </div>
-
-<div id="toasts"></div>
 
 <!-- CONFIRM -->
 <div id="confirm-modal">
@@ -872,27 +871,48 @@ document.getElementById('confirm-no').addEventListener('click', () => document.g
    AUTH
 ═══════════════════════════════════════════════════ */
 document.getElementById('gate-btn').addEventListener('click', tryLogin);
-document.getElementById('gate-input').addEventListener('keydown', e => { if (e.key === 'Enter') tryLogin(); });
+document.getElementById('admin-pass').addEventListener('keydown', e => { if (e.key === 'Enter') tryLogin(); });
+document.getElementById('admin-email').addEventListener('keydown', e => { if (e.key === 'Enter') tryLogin(); });
 
-function tryLogin() {
-  const val = document.getElementById('gate-input').value;
+async function tryLogin() {
+  let userId = document.getElementById('admin-email').value.trim().toLowerCase();
+  const password = document.getElementById('admin-pass').value;
   const errEl = document.getElementById('gate-err');
-  if (val === getPass()) {
+  const btn = document.getElementById('gate-btn');
+  
+  if (!userId || !password) {
+    errEl.textContent = 'Enter User ID and password';
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Verifying...';
+  
+  // THE TRICK: Invisibly convert the short User ID into an email format for Supabase
+  // If they type "rvhub", it becomes "rvhub@rvhub.admin"
+  if (!userId.includes('@')) {
+    userId = userId + '@rvhub.admin';
+  }
+
+  const { data, error } = await db.auth.signInWithPassword({
+    email: userId,
+    password: password,
+  });
+
+  if (error) {
+    errEl.textContent = "Invalid Credentials"; 
+    btn.disabled = false;
+    btn.textContent = 'Authenticate';
+    setTimeout(() => errEl.textContent = '', 3000);
+  } else {
     document.getElementById('gate').remove();
     document.getElementById('topbar').style.display = 'flex';
     document.getElementById('app').style.display = 'flex';
-    loadAll(); addLog('Admin logged in');
+    loadAll(); 
+    addLog('Admin authenticated securely');
     updateClock(); setInterval(updateClock, 60000);
-  } else {
-    errEl.textContent = 'Incorrect PIN.'; document.getElementById('gate-input').value = '';
-    document.getElementById('gate-input').focus();
-    setTimeout(() => errEl.textContent = '', 3000);
   }
 }
-
-function updateClock() { document.getElementById('topbar-time').textContent = new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true }); }
-document.getElementById('logout-btn').addEventListener('click', () => { addLog('Admin logged out'); location.reload(); });
-
 /* ═══════════════════════════════════════════════════
    LOAD ALL
 ═══════════════════════════════════════════════════ */
@@ -1230,13 +1250,10 @@ function openOrderModal(id) {
   const o = adm.orders.find(x => x.id === id);
   if (!o) return;
   
-  // Kept the ID in the title so you know which order you are looking at, 
-  // but removed it from the WhatsApp message below.
   document.getElementById('order-modal-title').textContent = `Order ${o.id}`;
   
   const addressStr = [o.address, o.area, o.city, o.state, o.pincode].filter(Boolean).join(', ');
 
-  // --- UPDATED: Cleaned up message (No Order ID, No Dropship Intro) ---
   const supplierMsg = encodeURIComponent(
     `*Items Ordered:* ${o.items || ''}\n\n` +
     `*Delivery Address:*\n` +
@@ -1281,7 +1298,19 @@ function openOrderModal(id) {
             </div>`;
   }).join('');
 
-  // --- UPDATED: Removed the screenshot HTML injection entirely ---
+  // The clean, inline image logic (no broken links)
+  // The upgraded, error-proof inline image logic
+  const screenshotHtml = (o.screenshot && o.screenshot.length > 50) 
+    ? `<div class="od-field" style="grid-column:1/-1; text-align:center;">
+         <div class="od-label" style="margin-bottom:12px; text-align:left;">Payment Screenshot</div>
+         <img src="${o.screenshot}" alt="Payment Proof" 
+              onerror="this.style.display='none'; this.nextElementSibling.style.display='block';" 
+              style="max-width:100%; max-height:500px; object-fit:contain; border-radius:6px; border:1px solid var(--border);">
+         <div style="display:none; padding:16px; margin-top:10px; color:var(--warn); background:rgba(214,137,16,0.1); border:1px dashed var(--warn); border-radius:6px;">
+           ⚠ <strong>Image Unavailable:</strong> This is a legacy order or the image data was corrupted during upload.
+         </div>
+       </div>` 
+    : `<div class="od-field" style="grid-column:1/-1;"><div class="od-label">Payment Screenshot</div><div class="od-val" style="color:var(--muted)">No screenshot uploaded</div></div>`;
 
   document.getElementById('order-modal-body').innerHTML = `
     <div class="order-detail-grid">
@@ -1296,6 +1325,8 @@ function openOrderModal(id) {
       
       ${paymentHtml}
       <div class="od-field"><div class="od-label">Ordered</div><div class="od-val">${fmtDate(o.timestamp)} ${fmtTime(o.timestamp)}</div></div>
+      
+      ${screenshotHtml}
     </div>
     
     <div style="margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border);">
@@ -1305,8 +1336,6 @@ function openOrderModal(id) {
           ${optionsHtml}
         </select>
         <button class="btn" style="background: var(--gold); color: var(--ink); border: none;" onclick="updateOrderStatus('${o.id}', document.getElementById('modal-status-select-${o.id}').value); closeOrderModal();">
-          Save Status
-        </button>
           Save Status
         </button>
         
@@ -2006,15 +2035,33 @@ function checkPinMatch() {
 newPinInput.addEventListener('input', checkPinMatch);
 confirmPinInput.addEventListener('input', checkPinMatch);
 
-// 3. Save the PIN
-updateBtn.addEventListener('click', () => {
+// 3. Update the Password in Supabase Auth Vault
+updateBtn.addEventListener('click', async () => {
   const np = newPinInput.value;
-  localStorage.setItem(KEYS.pass, np);
-  addLog('Admin PIN changed'); 
-  toast('PIN updated — please re-login', 'ok');
-  setTimeout(() => location.reload(), 1500);
+  
+  updateBtn.disabled = true;
+  updateBtn.textContent = 'Updating...';
+  
+  // Tell Supabase to securely update the password for the currently logged-in user
+  const { data, error } = await db.auth.updateUser({
+    password: np
+  });
+  
+  if (error) {
+    toast('Update failed: ' + error.message, 'err');
+    updateBtn.disabled = false;
+    updateBtn.textContent = 'Update PIN';
+  } else {
+    addLog('Admin password securely updated'); 
+    toast('Password updated across all devices!', 'ok');
+    
+    // Log out so you can test the new password instantly
+    setTimeout(async () => {
+      await db.auth.signOut();
+      location.reload();
+    }, 1500);
+  }
 });
-
 document.getElementById('export-products-btn').addEventListener('click', () => { exportCSV(adm.products.map(p => ({ ...p, image: p.image?.startsWith('data:') ? '[base64_image]' : p.image })), 'rvhub-products.csv'); addLog('Exported products CSV'); });
 document.getElementById('export-orders-btn').addEventListener('click', () => { exportCSV(load(KEYS.orders).filter(o => !o.deleted).map(o => ({ ...o, screenshot: '[omitted]' })), 'rvhub-orders.csv'); addLog('Exported orders CSV'); });
 document.getElementById('export-all-btn').addEventListener('click', () => {
