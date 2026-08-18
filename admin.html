@@ -480,6 +480,7 @@
         <div class="form-grid">
           <div class="field span2" id="fld-name">
             <label>Product Name *</label>
+
             <input type="text" id="p-name" placeholder="e.g. PRODUCT NAME" maxlength="100">
             <span class="err-msg">Name required</span>
           </div>
@@ -564,14 +565,12 @@
 
             <!-- URL panel -->
             <div id="img-panel-url" style="display:none">
-              <div class="field" style="margin:0">
-                <input type="url" id="p-img-url" placeholder="https://example.com/image.jpg">
-              </div>
-              <div id="url-preview-wrap" style="margin-top:10px;display:none">
-                <img id="url-preview-img" style="max-height:110px;border-radius:5px;border:1px solid var(--border);background:#fff" alt="URL Preview">
+              <div class="field" style="margin:0; display:flex; gap:10px;">
+                <input type="url" id="p-img-url" placeholder="Paste direct image link here..." style="flex:1; padding:10px; border-radius:4px; border:1px solid var(--border); background:#111; color:#fff; outline:none;">
+                <button type="button" id="btn-add-url-img" style="padding: 10px 20px; background: var(--gold); color: var(--ink); border: none; border-radius: 4px; font-weight: bold; cursor: pointer;">Add</button>
               </div>
             </div>
-          </div>
+
           <!-- ─── END IMAGE SECTION ─── -->
 
           <div class="field span2"><label>Description</label><textarea id="p-desc" rows="3" placeholder="Features, material, details…"></textarea></div>
@@ -844,7 +843,13 @@ const fmtDate = ts => ts ? new Date(ts).toLocaleDateString('en-IN', { day: '2-di
 const fmtTime = ts => ts ? new Date(ts).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) : '';
 
 function toast(msg, type = '') {
-  const rack = document.getElementById('toasts');
+  let rack = document.getElementById('toasts');
+  // If the container is missing, automatically build it!
+  if (!rack) {
+    rack = document.createElement('div');
+    rack.id = 'toasts';
+    document.body.appendChild(rack);
+  }
   const el = document.createElement('div'); el.className = `toast ${type}`; el.textContent = msg;
   rack.appendChild(el); requestAnimationFrame(() => el.classList.add('show'));
   setTimeout(() => { el.classList.remove('show'); setTimeout(() => el.remove(), 350); }, 3200);
@@ -853,6 +858,11 @@ function toast(msg, type = '') {
 function addLog(msg) {
   const log = load(KEYS.log); log.unshift({ msg, ts: Date.now() });
   save(KEYS.log, log.slice(0, 200));
+}
+
+function updateClock() {
+  const el = document.getElementById('topbar-time');
+  if(el) el.textContent = new Date().toLocaleString('en-IN', { weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
 }
 
 /* ═══════════════════════════════════════════════════
@@ -1504,17 +1514,90 @@ function renderImagePreviews() {
   });
 }
 
-// URL preview
-document.getElementById('p-img-url').addEventListener('input', e => {
-  const url = e.target.value.trim();
-  const wrap = document.getElementById('url-preview-wrap');
-  const img  = document.getElementById('url-preview-img');
-  if (url) {
-    wrap.style.display = 'block';
-    img.src = url;
-    img.onerror = () => { wrap.style.display = 'none'; };
-  } else wrap.style.display = 'none';
+// URL Auto-Mirroring to Supabase (Upgraded with Double-Proxy & Error Alerts)
+async function processUrlImage() {
+  const urlInput = document.getElementById('p-img-url');
+  const url = urlInput.value.trim();
+  
+  if (!url) return;
+
+  if (adm.uploadedImages.length >= 5) {
+    toast('Max 5 images allowed', 'warn');
+    urlInput.value = '';
+    return;
+  }
+
+  toast('☁️ Mirroring image to your Cloud...', 'info');
+  urlInput.value = ''; 
+
+  const grid = document.getElementById('img-preview-grid');
+  document.querySelector('.img-upload-section').appendChild(grid);
+
+  let finalUrl = url;
+  if (!url.includes('supabase.co')) {
+    try {
+      // Proxy Attempt 1: WSRV (Dedicated Stealth Image Proxy)
+      let response = await fetch(`https://wsrv.io/?url=${encodeURIComponent(url)}`);
+      
+      // Proxy Attempt 2: AllOrigins fallback
+      if (!response.ok) {
+        response = await fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`);
+      }
+      
+      if (!response.ok) throw new Error('Proxy Blocked: Eytick firewall stopped the download.');
+      
+      const blob = await response.blob();
+      
+      if (!blob.type.includes('image')) {
+        toast('❌ Error: That is a Website link! Right-click the picture and select "Copy image address".', 'err');
+        return; 
+      }
+
+      const fileName = `mirrored_${Date.now()}.jpg`;
+      const { data, error } = await db.storage.from('products').upload(fileName, blob, { contentType: blob.type, upsert: true });
+      
+      if (error) {
+        throw new Error('Supabase Error: ' + error.message);
+      }
+
+      const { data: publicData } = db.storage.from('products').getPublicUrl(fileName);
+      finalUrl = publicData.publicUrl;
+      toast('✅ Image permanently saved to Cloud!', 'ok');
+      
+    } catch (err) {
+      console.error(err);
+      // Show the exact reason it failed on the screen!
+      toast(`⚠️ ${err.message}`, 'err');
+      return; // Stop the code so we don't display a broken Eytick link
+    }
+  }
+
+  adm.uploadedImages.push(finalUrl);
+  renderImagePreviews();
+}
+
+// Reconnect the Add Button
+document.getElementById('btn-add-url-img').addEventListener('click', processUrlImage);
+
+// Reconnect the Enter Key inside the box
+document.getElementById('p-img-url').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') {
+    e.preventDefault(); // Stop page from refreshing
+    processUrlImage();
+  }
 });
+
+// Listen for the Add Button click
+document.getElementById('btn-add-url-img').addEventListener('click', processUrlImage);
+
+// Listen for the Enter Key inside the box
+document.getElementById('p-img-url').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') {
+    e.preventDefault(); // Stop page from refreshing
+    processUrlImage();
+  }
+});
+
 
 /**
  * getFinalImages() — BUG 1 FIX
@@ -1523,17 +1606,11 @@ document.getElementById('p-img-url').addEventListener('input', e => {
  * Never returns a placeholder here; placeholder logic lives in saveProduct().
  */
 function getFinalImages() {
-  if (adm.activeImgTab === 'file' && adm.uploadedImages.length) {
-    return [...adm.uploadedImages];          // new uploaded images
+  // Both the File tab and the URL tab now feed into the same array!
+  if (adm.uploadedImages.length) {
+    return [...adm.uploadedImages]; 
   }
-  if (adm.activeImgTab === 'url') {
-    const url = document.getElementById('p-img-url').value.trim();
-    // Only treat as new image if the URL differs from what was pre-filled
-    const prefilled = adm._editOriginalImage || '';
-    if (url && url !== prefilled) return [url];
-    // If URL matches original, return empty (no change intended)
-  }
-  return [];   // ← no new image supplied → caller preserves existing
+  return []; 
 }
 
 /** @deprecated — kept for internal compatibility, use getFinalImages() */
@@ -1725,24 +1802,18 @@ document.getElementById('p-sale').value = (p.sale_price != null && p.sale_price 
    */
   const urlInput = document.getElementById('p-img-url');
   if (p.image && p.image.startsWith('http')) {
-    // Switch to URL tab — image is an external URL
     document.querySelectorAll('.img-tab').forEach(t => t.classList.remove('active'));
     document.querySelector('[data-imgtab="url"]').classList.add('active');
     adm.activeImgTab = 'url';
     document.getElementById('img-panel-file').style.display = 'none';
     document.getElementById('img-panel-url').style.display  = 'block';
-    urlInput.value = p.image;
-    document.getElementById('url-preview-wrap').style.display = 'block';
-    document.getElementById('url-preview-img').src = p.image;
   } else {
-    // Stay on file tab — image is base64 or empty
     document.querySelectorAll('.img-tab').forEach(t => t.classList.remove('active'));
     document.querySelector('[data-imgtab="file"]').classList.add('active');
     adm.activeImgTab = 'file';
     document.getElementById('img-panel-file').style.display = 'block';
     document.getElementById('img-panel-url').style.display  = 'none';
     urlInput.value = '';
-    document.getElementById('url-preview-wrap').style.display = 'none';
   }
 
   // If product has multiple images, show them in the preview grid as "existing"
@@ -1797,7 +1868,6 @@ function resetProductForm() {
   adm._editOriginalImage = '';  // BUG 1 FIX: clear sentinel on reset
   renderImagePreviews();
   document.getElementById('current-img-wrap').style.display = 'none';
-  document.getElementById('url-preview-wrap').style.display = 'none';
   document.getElementById('upload-status').className = 'upload-status';
   // Reset image tab to "file" for new products
   document.querySelectorAll('.img-tab').forEach(t => t.classList.remove('active'));
@@ -2321,6 +2391,8 @@ document.getElementById('p-cat').addEventListener('change', function() {
     }
   }
 });
+
+
 </script>
 </body>
 </html>
