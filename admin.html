@@ -551,7 +551,7 @@
                 <div class="drop-zone-icon">🖼️</div>
                 <div class="drop-zone-text">
                   <strong>Click to browse files</strong> or drag & drop here
-                  <div class="drop-zone-hint">JPG, PNG, WEBP · Max 5 MB each · Up to 5 images · Auto-compressed</div>
+                  <div class="drop-zone-hint">JPG, PNG, WEBP · Max 5 MB each · Up to 15 images · Auto-compressed</div>
                 </div>
               </div>
 
@@ -1419,7 +1419,7 @@ const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
 
 function handleImageFiles(files) {
   if (!files || !files.length) return;
-  const remaining = 5 - adm.uploadedImages.length;
+  const remaining = 15 - adm.uploadedImages.length;
   if (remaining <= 0) { toast('Max 5 images per product', 'warn'); return; }
 
   const toProcess = Array.from(files).slice(0, remaining);
@@ -1521,7 +1521,7 @@ async function processUrlImage() {
   
   if (!url) return;
 
-  if (adm.uploadedImages.length >= 5) {
+  if (adm.uploadedImages.length >= 15) {
     toast('Max 5 images allowed', 'warn');
     urlInput.value = '';
     return;
